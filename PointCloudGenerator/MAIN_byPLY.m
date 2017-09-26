@@ -15,7 +15,7 @@ min_t = [
     abs(ptCloud_Q.ZLimits(1)-ptCloud_Q.ZLimits(2))];
 max_t = min_t*1.3;
 
-ptCloud_P = ApplyRandomTransformation(ptCloud_Q, max_rot, min_t, max_t);
+[ptCloud_P, T] = ApplyRandomTransformation(ptCloud_Q, max_rot, min_t, max_t);
 ptCloud_P.Color = uint8( repmat([0 0 255], ptCloud_P.Count ,1) );
 
 %% Add Noise
@@ -28,3 +28,8 @@ ptCloud_P = AddOutliers(ptCloud_P, 0.007);
 pcshow(ptCloud_Q)
 hold on
 pcshow(ptCloud_P)
+
+%% Save
+pcwrite(ptCloud_Q,'ptCloud_Q.pcd','Encoding','ascii');
+pcwrite(ptCloud_P,'ptCloud_P.pcd','Encoding','ascii');
+SaveTransformationMatrix(T,'trans.mat');

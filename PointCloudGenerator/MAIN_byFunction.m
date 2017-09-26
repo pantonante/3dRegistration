@@ -29,3 +29,8 @@ ptCloud_P = AddOutliers(ptCloud_P, 0.003);
 pcshow(ptCloud_P)
 hold on
 pcshow(ptCloud_Q)
+
+%% Save
+pcwrite(ptCloud_Q,'ptCloud_Q.pcd','Encoding','ascii');
+pcwrite(ptCloud_P,'ptCloud_P.pcd','Encoding','ascii');
+SaveTransformationMatrix(T,'trans.mat');
