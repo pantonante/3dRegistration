@@ -3,6 +3,10 @@
 f = @(X,Y) (10*sin(sqrt(X.^2 + Y.^2)) + 0.1) ./ sqrt(X.^2 + Y.^2);
 x_space = -8:.25:8;
 y_space = -8:.25:8;
+sigma = 0.005; % noise
+beta = 0.003; % outliers percentage
+
+%% Generation
 ptCloud_Q = PCbyFunc(f,x_space,y_space);
 
 %% Apply Random Transformation
@@ -18,12 +22,11 @@ ptCloud_P = ApplyRandomTransformation(ptCloud_Q, max_rot, min_t, max_t);
 ptCloud_P.Color = uint8( repmat([0 0 255], ptCloud_P.Count ,1) );
 
 %% Add Noise
-sigma = 0.005;
 ptCloud_P = AddNoise(ptCloud_P, sigma);
 ptCloud_P.Color = uint8( repmat([0 255 0], ptCloud_P.Count, 1) );
 
 %% Add Outliers
-ptCloud_P = AddOutliers(ptCloud_P, 0.003);
+ptCloud_P = AddOutliers(ptCloud_P, beta);
 
 %% Show
 pcshow(ptCloud_P)

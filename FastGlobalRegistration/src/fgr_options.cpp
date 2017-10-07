@@ -1,20 +1,59 @@
-#include "fgr_options.h"
 #include <iostream>
+#include "fgr_options.h"
+#include "default_config.h"
 
 int FGROptions::parse(int argc, char** argv)
 {
-    po::options_description desc("Fast Global Registration CLI parameters");
-    desc.add_options() 
-      ("help,h", "Print help messages") 
-      ("pointcloudP,p",po::value<std::string>()->required(), "Point cloud filename [*.pcd]") 
-      ("pointcloudQ,q",po::value<std::string>()->required(), "Point cloud filename [*.pcd]")
+    po::options_description desc("Required arguments");
+    desc.add_options()       
+      ("pointcloudP,p",         po::value<std::string>(&ptCloudP_filename)->required(), 
+        "Point cloud filename [*.pcd].\n") 
+      ("pointcloudQ,q",         po::value<std::string>(&ptCloudQ_filename)->required(), 
+        "Point cloud filename [*.pcd].\n")
     ; 
+
+    po::options_description misc("Miscellaneous");
+    misc.add_options()
+      ("help,h", "Print help messages\n")
+      ("verbose,v",             po::bool_switch(&verbose)->default_value(VERBOSE), 
+        "Verbose output.\n")
+      ("output,o",              po::value<std::string>(&outputfile)->default_value(""),
+        "Output filename, save the transformation matrix.\n")
+      ("fitness,f",              po::value<std::string>(&fitnessfile)->default_value(""),
+        "Save to file the RMSE in each iteration.\n")
+      ("report,r",              po::value<std::string>(&reportfile)->default_value(""),
+        "Save an HTML report.\n")
+    ;
+
+    po::options_description algpar("Algorithm parameters");
+    algpar.add_options()
+      ("abs-scale,a",           po::bool_switch(&use_absolute_scale)->default_value(USE_ABSOLUTE_SCALE), 
+        "If enabled, measure distance in absolute scale, otherwise in scale relative to the diameter of the model.\n")
+      ("closed-form,c",         po::bool_switch(&closed_form)->default_value(CLOSED_FORM),
+        "Use closed form solution for transformation estimation.\n")
+      ("div-factor",            po::value<float>(&div_factor)->default_value(DIV_FACTOR), 
+        "Division factor used for graduated non-convexity.\n")
+      ("max-corr-dist",         po::value<float>(&max_corr_dist)->default_value(MAX_CORR_DIST), 
+        "Maximum correspondence distance (also see abs-scale).\n")
+      ("iterations,n",          po::value<int>(&iteration_number)->default_value(ITERATION_NUMBER),
+        "Maximum number of iteration.\n")
+      ("tuple-scale",           po::value<float>(&tuple_scale)->default_value(TUPLE_SCALE),
+        "Similarity measure used for tuples of feature points.\n")
+      ("tuple-max-count,m",       po::value<int>(&tuple_max_count)->default_value(TUPLE_MAX_CNT),
+        "Maximum tuple numbers.\n")
+      ("normals-search-radius", po::value<float>(&normals_search_radius)->default_value(NORMALS_SEARCH_RAD),
+        "Normals estimation search radius.\n")
+      ("fpfh-search-radius",    po::value<float>(&fpfh_search_radius)->default_value(FPFH_SEARCH_RAD),
+        "FPFH estimation search radius.\n")
+    ;
 
     po::options_description hidden;
     // no hidden parameters
 
     po::options_description all_options;
     all_options.add(desc);
+    all_options.add(misc);
+    all_options.add(algpar);
 
     po::positional_options_description p;
     //no positional parameters
@@ -29,19 +68,16 @@ int FGROptions::parse(int argc, char** argv)
 
 	    if(vm.count("help"))
 	    {
-	        std::cout << make_usage_string_(basename_(argv[0]), desc, p) << '\n';
+	        std::cout << make_usage_string_(basename_(argv[0]), all_options, p) << '\n';
 	        return FGROptions::OPTPARSE_HELP;
 	    }
 
 	    po::notify(vm);
 	} catch (po::error& e) { 
 		std::cerr << "ERROR: " << e.what() << std::endl << std::endl;
-		std::cout << make_usage_string_(basename_(argv[0]), desc, p) << '\n';
+		std::cout << make_usage_string_(basename_(argv[0]), all_options, p) << '\n';
 		return FGROptions::OPTPARSE_FAIL; 
 	}
-
-    ptCloudP_filename = vm["pointcloudP"].as<std::string>();
-    ptCloudQ_filename = vm["pointcloudQ"].as<std::string>();
 
     return FGROptions::OPTPARSE_SUCCESS;
 }

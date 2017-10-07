@@ -1,13 +1,23 @@
 #define TAG "[FGR] "
 #include "fast_global_registration.h"
 
-time_t tstart, tend; 
+Eigen::Matrix4f FastGlobalRegistration::performRegistration(){   
+	timer_.tic();
+	AdvancedMatching();
+	if(closed_form)
+		OptimizePairwise_ClosedForm(true, iteration_number);
+	else
+		OptimizePairwise(true, iteration_number);
+	timer_.toc("Registration");
+	return GetTrans();
+}
 
 FastGlobalRegistration::FastGlobalRegistration(pcl::PointCloud<pcl::PointXYZ>::Ptr ptCloud_P, 
-	pcl::PointCloud<pcl::PointXYZ>::Ptr ptCloud_Q)
+	pcl::PointCloud<pcl::PointXYZ>::Ptr ptCloud_Q, bool verbose)
 {
 	Points pts_P, pts_Q;
 	Feature feat_P,feat_Q;
+	this->verbose = verbose;
 
 	/* Point Clouds Initialization */
 	// Point Cloud P
@@ -26,19 +36,17 @@ FastGlobalRegistration::FastGlobalRegistration(pcl::PointCloud<pcl::PointXYZ>::P
     }	
 	pointcloud_.push_back(pts_Q);
 
-	tstart = time(0);
 	/* Normalization */
+	timer_.tic();
+	
 	NormalizePoints(); // don't skip this passage before computing FPFH!
 
 	/* Features */
 	pcl::PointCloud<pcl::FPFHSignature33>::Ptr fpfh_P = computeFPFH(ptCloud_P);
     pcl::PointCloud<pcl::FPFHSignature33>::Ptr fpfh_Q = computeFPFH(ptCloud_Q);
 
-    tend = time(0);
+    timer_.toc("FPFH estimation and normalization");
 
-#if defined(VERBOSE) || defined(SHOW_COMPUTATION_TIME)
-    std::cout << TAG << "FPFH estimation took " << difftime(tend, tstart) << " second(s)." << std::endl;
-#endif
     //data structure filling
     for(pcl::PointCloud<pcl::FPFHSignature33>::iterator it = fpfh_P->begin(); it != fpfh_P->end(); it++){ 
     	VectorXf fpfh(33);
@@ -67,7 +75,7 @@ pcl::PointCloud<pcl::FPFHSignature33>::Ptr FastGlobalRegistration::computeFPFH(p
 	pcl::search::KdTree<pcl::PointXYZ>::Ptr tree (new pcl::search::KdTree<pcl::PointXYZ>);
 	normalEstimation.setSearchMethod (tree);
 	pcl::PointCloud<pcl::Normal>::Ptr cloudWithNormals (new pcl::PointCloud<pcl::Normal>);
-	normalEstimation.setRadiusSearch (NORMALS_SEARCH_RADIUS*GlobalScale);
+	normalEstimation.setRadiusSearch (normals_search_radius*GlobalScale);
 	normalEstimation.compute (*cloudWithNormals);
 
 	// Setup the feature computation
@@ -85,23 +93,11 @@ pcl::PointCloud<pcl::FPFHSignature33>::Ptr FastGlobalRegistration::computeFPFH(p
 	fpfhEstimation.setSearchMethod (tree);
 
 	pcl::PointCloud<pcl::FPFHSignature33>::Ptr pfhFeatures(new pcl::PointCloud<pcl::FPFHSignature33>);
-	fpfhEstimation.setRadiusSearch (FPFH_SEARCH_RADIUS*GlobalScale);
+	fpfhEstimation.setRadiusSearch (fpfh_search_radius*GlobalScale);
 	// Actually compute the spin images
 	fpfhEstimation.compute (*pfhFeatures);
 
 	return pfhFeatures;
-}
-
-
-Eigen::Matrix4f FastGlobalRegistration::performRegistration(){   
-	tstart = time(0);
-	AdvancedMatching();
-	OptimizePairwise(true, ITERATION_NUMBER);
-	tend = time(0);
-#if defined(VERBOSE) || defined(SHOW_COMPUTATION_TIME)
-    std::cout << TAG << "Registration took " << difftime(tend, tstart) << " second(s)." << std::endl;
-#endif
-	return GetTrans();
 }
 
 void FastGlobalRegistration::SearchFLANNTree(flann::Index<flann::L2<float>>* index,
@@ -132,9 +128,8 @@ void FastGlobalRegistration::AdvancedMatching()
 	int fi = 0;
 	int fj = 1;
 
-#ifdef VERBOSE
-	cout<<TAG<< TAG << "Advanced matching : ["<< fi <<" - "<< fj << endl;
-#endif
+	if(verbose)
+		cout<<TAG << "Advanced matching : ["<< fi <<" - "<< fj <<"]" << endl;
 
 	bool swapped = false;
 
@@ -227,9 +222,8 @@ void FastGlobalRegistration::AdvancedMatching()
 	for (int j = 0; j < ncorres_ji; ++j)
 		corres.push_back(std::pair<int, int>(corres_ji[j].first, corres_ji[j].second));
 
-#ifdef VERBOSE
-	cout<<TAG<<"Correspondence computation on remained: "<<  (int)corres.size() <<endl;
-#endif
+	if(verbose)
+		cout<<TAG<<"Correspondence computation on remained: "<<  (int)corres.size() <<endl;
 
 	///////////////////////////
 	/// CROSS CHECK
@@ -238,9 +232,9 @@ void FastGlobalRegistration::AdvancedMatching()
 	///////////////////////////
 	if (crosscheck)
 	{
-#ifdef VERBOSE
-		cout<<TAG<<"\t[cross check] ";
-#endif
+		if(verbose)
+			cout<<TAG<<"\t- cross check, ";
+
 		// build data structure for cross check
 		corres.clear();
 		corres_cross.clear();
@@ -277,9 +271,8 @@ void FastGlobalRegistration::AdvancedMatching()
 				}
 			}
 		}
-#ifdef VERBOSE
-		cout << "points are remained: " << (int)corres.size() << endl;
-#endif
+		if(verbose)
+			cout << "points remained: " << (int)corres.size() << endl;
 	}
 
 	///////////////////////////
@@ -290,13 +283,12 @@ void FastGlobalRegistration::AdvancedMatching()
 	if (tuple)
 	{
 		srand(time(NULL));
-#ifdef VERBOSE
-		cout<<TAG<<"\t[tuple constraint] ";
-#endif
+		if(verbose)
+			cout<<TAG<<"\t- tuple constraint, ";
 		int rand0, rand1, rand2;
 		int idi0, idi1, idi2;
 		int idj0, idj1, idj2;
-		float scale = TUPLE_SCALE;
+		float scale = tuple_scale;
 		int ncorr = corres.size();
 		int number_of_trial = ncorr * 100;
 		std::vector<std::pair<int, int>> corres_tuple;
@@ -344,12 +336,11 @@ void FastGlobalRegistration::AdvancedMatching()
 				cnt++;
 			}
 
-			if (cnt >= TUPLE_MAX_CNT)
+			if (cnt >= tuple_max_count)
 				break;
 		}
-#ifdef VERBOSE
-		cout<<TAG<< cnt << " tuples ("<< number_of_trial <<" trial, "<<i <<" actual)."<<endl;
-#endif
+		if(verbose)
+			cout<<"tuples remained "<< cnt << " ("<< number_of_trial <<" trial, "<<i <<" actual)."<<endl;
 		corres.clear();
 
 		for (int i = 0; i < corres_tuple.size(); ++i)
@@ -364,10 +355,11 @@ void FastGlobalRegistration::AdvancedMatching()
 		corres.clear();
 		corres = temp;
 	}
-#ifdef VERBOSE
-	cout<<TAG<<"\t[final] matches "<< (int)corres.size() <<"."<<endl;
-#endif
+
 	corres_ = corres;
+
+	if(verbose)
+		cout<<TAG<<"\t- final matches "<< (int)corres.size() <<" tuples."<<endl;
 }
 
 // Normalize scale of points.
@@ -396,10 +388,9 @@ void FastGlobalRegistration::NormalizePoints()
 		mean = mean / npti;
 		Means.push_back(mean);
 
-#ifdef VERBOSE
-		cout << "normalize points :: mean[" << i << "] = ["
+		if(verbose)
+			cout << TAG <<"Normalize points, mean(" << i << ") = ["
 			<< mean(0) << " " << mean(1) << " " << mean(2) << "]" << endl;
-#endif
 
 		for (int ii = 0; ii < npti; ++ii)
 		{
@@ -422,16 +413,15 @@ void FastGlobalRegistration::NormalizePoints()
 	}
 
 	//// mean of the scale variation
-	if (USE_ABSOLUTE_SCALE) {
+	if (use_absolute_scale) {
 		GlobalScale = 1.0f;
 		StartScale = scale;
 	} else {
 		GlobalScale = scale; // second choice: we keep the maximum scale.
 		StartScale = 1.0f;
 	}
-#ifdef VERBOSE
-	cout << "normalize points :: global scale : " <<  GlobalScale <<endl;
-#endif
+	if(verbose)
+		cout << TAG << "Normalize points, global scale: " <<  GlobalScale << endl;
 
 	for (int i = 0; i < num; ++i)
 	{
@@ -447,14 +437,14 @@ void FastGlobalRegistration::NormalizePoints()
 
 double FastGlobalRegistration::OptimizePairwise(bool decrease_mu_, int numIter_)
 {
-#ifdef VERBOSE
-	cout<<TAG<<"Pairwise rigid pose optimization"<<endl;
-#endif
+	if(verbose)
+		cout<<TAG<<"Pairwise rigid pose optimization (iterative)"<<endl;
 
 	double par;
 	int numIter = numIter_;
-	TransOutput_ = Eigen::Matrix4f::Identity();
+	vector<float> align_error;
 
+	TransOutput_ = Eigen::Matrix4f::Identity();
 	par = StartScale;
 
 	int i = 0;
@@ -480,8 +470,8 @@ double FastGlobalRegistration::OptimizePairwise(bool decrease_mu_, int numIter_)
 		// graduated non-convexity.
 		if (decrease_mu_)
 		{
-			if (itr % 4 == 0 && par > MAX_CORR_DIST) {
-				par /= DIV_FACTOR;
+			if (itr % 4 == 0 && par > max_corr_dist) {
+				par /= div_factor;
 			}
 		}
 
@@ -502,6 +492,7 @@ double FastGlobalRegistration::OptimizePairwise(bool decrease_mu_, int numIter_)
 			p = pointcloud_[i][ii];
 			q = pcj_copy[jj];
 			Eigen::Vector3f rpq = p - q;
+			align_error.push_back(rpq.dot(rpq)*GlobalScale);
 
 			int c2 = c;
 
@@ -538,6 +529,8 @@ double FastGlobalRegistration::OptimizePairwise(bool decrease_mu_, int numIter_)
 			r2 += (par * (1.0 - sqrt(s[c2])) * (1.0 - sqrt(s[c2])));
 		}
 
+		fitness.push_back(accumulate(align_error.begin(), align_error.end(), 0.0)/align_error.size());
+
 		Eigen::MatrixXd result(nvariable, 1);
 		result = -JTJ.llt().solve(JTr);
 
@@ -563,6 +556,87 @@ double FastGlobalRegistration::OptimizePairwise(bool decrease_mu_, int numIter_)
 	return par;
 }
 
+//http://jackhunt.uk/github%20repositories/3d%20registration/2017/08/24/horns-method.html
+//http://graphics.stanford.edu/~smr/ICP/comparison/eggert_comparison_mva97.pdf
+double FastGlobalRegistration::OptimizePairwise_ClosedForm(bool decrease_mu_, int numIter_)
+{
+	if(verbose)
+		cout<<TAG<<"Pairwise rigid pose optimization (closed form)"<<endl;
+
+	double par;
+	int numIter = numIter_;
+	TransOutput_ = Eigen::Matrix4f::Identity();
+	Eigen::Matrix4f T = Eigen::Matrix4f::Identity();
+	fitness.clear();
+
+	par = StartScale;
+
+	int i = 0; //ptCloud_P
+	int j = 1; //ptCloud_Q
+
+	// make another copy of pointcloud_[j].
+	Points pcj_copy;
+	int npcj = pointcloud_[j].size();
+	pcj_copy.resize(npcj);
+	for (int cnt = 0; cnt < npcj; cnt++)
+		pcj_copy[cnt] = pointcloud_[j][cnt];
+
+	if (corres_.size() < 10)
+		return -1;
+
+	std::vector<double> s(corres_.size(), 1.0);
+
+	for (int itr = 0; itr < numIter; itr++) {
+		Points p_corr, q_corr;
+		vector<float> align_error;
+
+		// graduated non-convexity.
+		if (decrease_mu_)
+		{
+			if (itr % 4 == 0 && par > max_corr_dist) {
+				par /= div_factor;
+			}
+		}
+
+		for (int c = 0; c < corres_.size(); c++) {
+			int ii = corres_[c].first;
+			int jj = corres_[c].second;
+			Eigen::Vector3f p, q;
+			p = pointcloud_[i][ii];
+			q = pcj_copy[jj];
+			Eigen::Vector3f rpq = p - q;
+			align_error.push_back(rpq.dot(rpq)*GlobalScale);
+
+			float temp = par / (rpq.dot(rpq) + par);
+			s[c] = temp * temp;
+			p_corr.push_back(p*s[c]*s[c]);
+			q_corr.push_back(q*s[c]*s[c]);
+		}
+		fitness.push_back(accumulate(align_error.begin(), align_error.end(), 0.0)/align_error.size());
+
+		// Find the transformation matrix (closed form)
+		Map<Matrix3Xf> ps(&p_corr[0].x(),3,corres_.size());
+		Map<Matrix3Xf> qs(&q_corr[0].x(),3,corres_.size());		
+		Matrix3f K = ps * qs.transpose();
+	    JacobiSVD<Matrix3f> svd(K, ComputeFullU | ComputeFullV);
+	    Matrix3f R = svd.matrixU()*svd.matrixV().transpose();
+	    if(R.determinant()<0) //this is to account for a numerical issue that may occur, causing the rotation to be reflected.
+	        R.col(2) *= -1;
+	    Vector3f t = ps.rowwise().mean() - R*qs.rowwise().mean();
+
+	    // Update with the last matrix
+	    T.block<3, 3>(0, 0) = R;
+		T.block<3, 1>(0, 3) = t;
+		TransOutput_ = T * TransOutput_;
+
+		// transform point clouds
+		for (int cnt = 0; cnt < npcj; cnt++)
+			pcj_copy[cnt] = R * pcj_copy[cnt] + t;
+
+	}
+	return par;
+}
+
 Eigen::Matrix4f FastGlobalRegistration::GetTrans()
 {
     Eigen::Matrix3f R;
@@ -570,12 +644,9 @@ Eigen::Matrix4f FastGlobalRegistration::GetTrans()
 	R = TransOutput_.block<3, 3>(0, 0);
 	t = TransOutput_.block<3, 1>(0, 3);
 
-	Eigen::Matrix4f transtemp;
-	transtemp.fill(0.0f);
-
+	Eigen::Matrix4f transtemp = Eigen::Matrix4f::Identity();;
 	transtemp.block<3, 3>(0, 0) = R;
 	transtemp.block<3, 1>(0, 3) = -R*Means[1] + t*GlobalScale + Means[0];
-	transtemp(3, 3) = 1;
     
     return transtemp;
 }

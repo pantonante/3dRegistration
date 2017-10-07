@@ -2,9 +2,7 @@ Fast Global Registration
 
 The MIT License (MIT)
 
-**Original work** Copyright (c) Intel Corporation 2016, Qianyi Zhou (<Qianyi.Zhou@gmail.com>), Jaesik Park (<syncle@gmail.com>), Vladlen Koltun (<vkoltun@gmail.com>)
-
-**Modified work** Copyright (C) 2017 Pasquale Antonante (<p.antonante@gmail.com>)
+Copyright (C) 2017 Pasquale Antonante (<p.antonante@gmail.com>)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

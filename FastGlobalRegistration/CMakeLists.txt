@@ -10,7 +10,7 @@ include_directories(${PCL_INCLUDE_DIRS})
 add_definitions(${PCL_DEFINITIONS})
 link_directories(${PCL_LIBRARY_DIRS})
 
-set(SOURCES src/main.cpp src/fgr_options.cpp src/fast_global_registration.cpp)
+set(SOURCES src/main.cpp src/fgr_options.cpp src/fast_global_registration.cpp src/CPUTimer.cpp)
 set(PCL_LIBS ${PCL_COMMON_LIBRARIES} ${PCL_IO_LIBRARIES} ${PCL_FEATURES_LIBRARIES} ${PCL_SEARCH_LIBRARIES} ${PCL_KDTREE_LIBRARIES})
 set(LIBS ${PCL_LIBS} ${Boost_PROGRAM_OPTIONS_LIBRARY})
 

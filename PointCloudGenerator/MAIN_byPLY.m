@@ -1,5 +1,6 @@
 plyFile = 'bunny/reconstruction/bun_zipper_res3.ply';
-sigma = 0.015;
+sigma = 0.015; % noise
+beta = 0.007; % outliers percentage
 
 %% Read PLY
 ptCloud_Q=pcread(plyFile);
@@ -22,7 +23,7 @@ ptCloud_P.Color = uint8( repmat([0 0 255], ptCloud_P.Count ,1) );
 ptCloud_P = AddNoise(ptCloud_P, sigma);
 
 %% Add Outliers
-ptCloud_P = AddOutliers(ptCloud_P, 0.007);
+ptCloud_P = AddOutliers(ptCloud_P, beta);
 
 %% SHOW
 pcshow(ptCloud_Q)
@@ -32,4 +33,4 @@ pcshow(ptCloud_P)
 %% Save
 pcwrite(ptCloud_Q,'ptCloud_Q.pcd','Encoding','ascii');
 pcwrite(ptCloud_P,'ptCloud_P.pcd','Encoding','ascii');
-SaveTransformationMatrix(T,'trans.mat');
+SaveTransformationMatrix(T,'trans.txt');

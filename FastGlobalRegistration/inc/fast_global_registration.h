@@ -3,24 +3,12 @@
 
 /* --------------------------------------- */
 
-#define USE_OMP
-
-#define USE_ABSOLUTE_SCALE		0		// Measure distance in absolute scale (1) or in scale relative to the diameter of the model (0)
-
-#define DIV_FACTOR				1.4		// Division factor used for graduated non-convexity
-#define MAX_CORR_DIST			0.025	// Maximum correspondence distance (also see comment of USE_ABSOLUTE_SCALE)
-#define ITERATION_NUMBER		120		// Maximum number of iteration
-#define TUPLE_SCALE				0.90	// Similarity measure used for tuples of feature points.
-#define TUPLE_MAX_CNT			1000	// Maximum tuple numbers.
-#define NORMALS_SEARCH_RADIUS	0.03	// Normals estimation search radius
-#define FPFH_SEARCH_RADIUS		0.2		// FPFH estimation search radius
-
-//#define VERBOSE
-#define SHOW_COMPUTATION_TIME
+#define USE_OMP 	//enables OpenMP
 
 /* --------------------------------------- */
 
 #include <vector>
+#include <numeric>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 #include <pcl/features/normal_3d.h>
@@ -30,7 +18,8 @@
 #include <flann/flann.hpp>
 #include <Eigen/Core>
 #include <Eigen/Geometry>
-#include <ctime>
+#include "CPUTimer.h"
+#include "default_config.h"
 
 using namespace Eigen;
 using namespace std;
@@ -40,11 +29,35 @@ typedef vector<VectorXf> Feature;
 
 class FastGlobalRegistration{
 public:
-	FastGlobalRegistration(pcl::PointCloud<pcl::PointXYZ>::Ptr ptCloud_P, pcl::PointCloud<pcl::PointXYZ>::Ptr ptCloud_Q);
+	bool	closed_form 			= CLOSED_FORM;
+	bool 	verbose 				= VERBOSE;
+	bool 	use_absolute_scale 		= USE_ABSOLUTE_SCALE;	// Measure distance in absolute scale (1) or in scale relative to the diameter of the model (0)
+	float 	div_factor 				= DIV_FACTOR; 			// Division factor used for graduated non-convexity
+	float 	max_corr_dist 			= MAX_CORR_DIST;		// Maximum correspondence distance (also see comment of USE_ABSOLUTE_SCALE)
+	int 	iteration_number 		= ITERATION_NUMBER;		// Maximum number of iteration
+	float 	tuple_scale 			= TUPLE_SCALE;			// Similarity measure used for tuples of feature points.
+	int 	tuple_max_count 		= TUPLE_MAX_CNT;		// Maximum tuple numbers.
+	float 	normals_search_radius 	= NORMALS_SEARCH_RAD;	// Normals estimation search radius
+	float 	fpfh_search_radius 		= FPFH_SEARCH_RAD;		// FPFH estimation search radius
+	vector<float> fitness;
+
+	FastGlobalRegistration(pcl::PointCloud<pcl::PointXYZ>::Ptr ptCloud_P, pcl::PointCloud<pcl::PointXYZ>::Ptr ptCloud_Q, bool verbose=false);
 	Eigen::Matrix4f performRegistration();
 	Eigen::Matrix4f GetTrans();
+	inline float getRMSE(){ return accumulate(fitness.begin(), fitness.end(), 0.0) / fitness.size(); }
+	inline string getTiming(){return timer_.getMeasurements(); }
 
 private:
+	CPUTimer timer_;
+	vector<Points> pointcloud_;
+	vector<Feature> features_;
+	Matrix4f TransOutput_;
+	vector<pair<int, int>> corres_;
+	// for normalization
+	Points Means;
+	float GlobalScale;
+	float StartScale;
+
 	pcl::PointCloud<pcl::FPFHSignature33>::Ptr computeFPFH(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud);
 	void SearchFLANNTree(flann::Index<flann::L2<float>>* index,
 							VectorXf& input,
@@ -54,15 +67,7 @@ private:
 	void AdvancedMatching();
 	void NormalizePoints();
 	double OptimizePairwise(bool decrease_mu_, int numIter_);
-
-	vector<Points> pointcloud_;
-	vector<Feature> features_;
-	Matrix4f TransOutput_;
-	vector<pair<int, int>> corres_;
-	// for normalization
-	Points Means;
-	float GlobalScale;
-	float StartScale;
+	double OptimizePairwise_ClosedForm(bool decrease_mu_, int numIter_);
 };
 
 #endif

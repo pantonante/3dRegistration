@@ -2,18 +2,18 @@
 
 ## Introduction
 
-This is an open source C++ implementation based on the technique presented in
-the following [paper](https://github.com/IntelVCL/FastGlobalRegistration/blob/master/docs/fast-global-registration.pdf)):
+This is an open source C++ implementation based on the technique presented in the following [paper](https://doi.org/10.1007/978-3-319-46475-6_47)):
 
-Fast Global Registration  
-Qian-Yi Zhou, Jaesik Park, and Vladlen Koltun  
-ECCV 2016  
+Zhou QY., Park J., Koltun V. *Fast Global Registration*. Computer Vision – ECCV 2016, vol 9906
 
-This implementation is largely based on the [original](https://github.com/IntelVCL/FastGlobalRegistration) work from the paper's authors.
+## Dependencies
+* [CMake](https://cmake.org/)
+* [PCL](http://pointclouds.org) 1.8 (this will install all the other dependencies)
+
 
 ## Compilation
 
-FastGlobalRegistration is compiled using [CMake](https://cmake.org/). 
+FastGlobalRegistration is compiled using CMake. 
 
 ```
 > mkdir build
@@ -22,41 +22,62 @@ FastGlobalRegistration is compiled using [CMake](https://cmake.org/).
 > make
 ```
 
+Tested and MacOS 10.12.
 
-## Running FastGlobalRegistration
 
-The FastGlobalRegistration program takes two point clouds in pcd format:
+## Usage
+
+The FastGlobalRegistration program takes two point clouds, P and Q, in pcd format:
 
 ```
 > FastGlobalRegistration -p pointcloud_P.pcd -q pointcloud_Q.pcd
 ```
 
-and prints the estimated rigid transformation matrix.
+and prints the estimated rigid transformation matrix that aligns Q to P.
+
+To see all available options, execute the program whit the flag `-h` 
+
+```
+>./FastGlobalRegistration -h
+Required arguments:
+  -p [ --pointcloudP ] arg              Point cloud filename [*.pcd].
+  -q [ --pointcloudQ ] arg              Point cloud filename [*.pcd].
+
+Miscellaneous:
+  -h [ --help ]                         Print help messages
+  -v [ --verbose ]                      Verbose output.
+  -o [ --output ] arg                   Output filename, save the transformation matrix.
+  -f [ --fitness ] arg                  Save to file the RMSE in each iteration.
+  -r [ --report ] arg                   Save an HTML report.
 
 
-### Tuning parameters
-
-The relevant parameters are defined in [fast_global_registration.h](inc/fast_global_registration.h) as defines.
-```cpp
-#define USE_OMP							// Enable the use of OpenMP for normals and feature estimation
-#define USE_ABSOLUTE_SCALE		0		// Measure distance in absolute scale (1) or in scale relative to the diameter of the model (0)
-#define DIV_FACTOR				1.4		// Division factor used for graduated non-convexity
-#define MAX_CORR_DIST			0.025	// Maximum correspondence distance (also see comment of USE_ABSOLUTE_SCALE)
-#define ITERATION_NUMBER		120		// Maximum number of iteration
-#define TUPLE_SCALE				0.90	// Similarity measure used for tuples of feature points.
-#define TUPLE_MAX_CNT			1000	// Maximum tuple numbers.
-#define NORMALS_SEARCH_RADIUS	0.03	// Normals estimation search radius
-#define FPFH_SEARCH_RADIUS		0.2		// FPFH estimation search radius
-
-#define VERBOSE
-#define SHOW_COMPUTATION_TIME
+Algorithm parameters:
+  -a [ --abs-scale ]                    If enabled, measure distance in absolute scale, otherwise in scale relative to the diameter of the model.
+  -c [ --closed-form ]                    Use closed form solution for transformation estimation.
+  --div-factor arg (=1.4)                Division factor used for graduated non-convexity.
+  --max-corr-dist arg (=0.025)            Maximum correspondence distance (also see abs-scale).
+  -n [ --iterations ] arg (=64)            Maximum number of iteration.
+  --tuple-scale arg (=0.95)                Similarity measure used for tuples of feature points.
+  --tuple-max-count arg (=1000)            Maximum tuple numbers.
+  --normals-search-radius arg (=0.02)    Normals estimation search radius (see abs-scale).
+  --fpfh-search-radius arg (=0.2)        FPFH estimation search radius (see abs-scale).
 ```
 
-We measure distance relative to the diameter_of_model if **USE_ABSOLUTE_SCALE** is set to 0. It is our default setting for synthetic data. For real world data which you know the absolute scale, change **USE_ABSOLUTE_SCALE** to 1 and define **MAX_CORR_DIST** accordingly.
+If the `abs-scale` flag is not enabled, all the distances of the model (e.g., search radii and correspondence distance) are measured relatively to the diameter of the point cloud. This is the default behavior with synthetic data. For real-world data, where the absolute scale is known a priori, these parameters can be set accordingly.
 
-**MAX_CORR_DIST** determines when the optimization will stop. In general, **MAX_CORR_DIST** (USE_ABSOLUTE_SCALE=1) or **MAX_CORR_DIST * diameter_of_model** (USE_ABSOLUTE_SCALE=0) should be set close to the threshold used to determine if a point pair is a match in global space. If you don't know how to set it, start with the default value **0.025**. Decreasing this parameter sometimes results in tighter alignment.
+The option `max-corr-dist` determines when the optimization will stop. In general, it should be set close to the threshold used to determine if a point pair is a match in global space. If you don't know how to set it, start with the default value **0.025**. Decreasing this parameter sometimes results in tighter alignment.
 
-**TUPLE_MAX_CNT** trades off between speed and accuracy. Increasing it will make the optimization slower but the result can be more accurate.
+The option `tuple-max-count` trades off between speed and accuracy. Increasing it will make the optimization slower, but the result can be more accurate.
+
+By enabling the flag `-c` (default disabled), the transformation matrix is estimated by closed form solution. In particular, it's used the Horn’s method for the registration of 3D point clouds.
+
+### Reports
+It is possible to export an HTML report of the registration process, it contains:
+
+* Final transformation matrix
+* Timing information
+* RMSE vs/ iterations
+* A summary of the parameters 
 
 ## License
 
