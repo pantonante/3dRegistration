@@ -53,14 +53,14 @@ Miscellaneous:
 
 Algorithm parameters:
   -a [ --abs-scale ]                    If enabled, measure distance in absolute scale, otherwise in scale relative to the diameter of the model.
-  -c [ --closed-form ]                    Use closed form solution for transformation estimation.
-  --div-factor arg (=1.4)                Division factor used for graduated non-convexity.
-  --max-corr-dist arg (=0.025)            Maximum correspondence distance (also see abs-scale).
-  -n [ --iterations ] arg (=64)            Maximum number of iteration.
-  --tuple-scale arg (=0.95)                Similarity measure used for tuples of feature points.
-  --tuple-max-count arg (=1000)            Maximum tuple numbers.
-  --normals-search-radius arg (=0.02)    Normals estimation search radius (see abs-scale).
-  --fpfh-search-radius arg (=0.2)        FPFH estimation search radius (see abs-scale).
+  -c [ --closed-form ]                  Use closed form solution for transformation estimation.
+  --div-factor arg (=1.4)               Division factor used for graduated non-convexity.
+  --max-corr-dist arg (=0.025)          Maximum correspondence distance (also see abs-scale).
+  -n [ --iterations ] arg (=64)         Maximum number of iteration.
+  --tuple-scale arg (=0.95)             Similarity measure used for tuples of feature points.
+  --tuple-max-count arg (=1000)         Maximum tuple numbers.
+  --normals-search-radius arg (=0.02)   Normals estimation search radius (see abs-scale).
+  --fpfh-search-radius arg (=0.2)       FPFH estimation search radius (see abs-scale).
 ```
 
 If the `abs-scale` flag is not enabled, all the distances of the model (e.g., search radii and correspondence distance) are measured relatively to the diameter of the point cloud. This is the default behavior with synthetic data. For real-world data, where the absolute scale is known a priori, these parameters can be set accordingly.
