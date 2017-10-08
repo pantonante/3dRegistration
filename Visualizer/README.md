@@ -1,6 +1,6 @@
 # Visualizer
 
-## Introdiction
+## Introduction
 Viz is a is a small visualization application built on top of PCL Visualizer to allow the visualization of the result of a 3D registration process.
 
 ## Dependencies
@@ -27,7 +27,7 @@ Options:
 A typical usage is
 
 ```
->./viz -p ptCloud_P.pcd -q ptCloud_Q.pcd -t trans.txt
+> ./viz -p ptCloud_P.pcd -q ptCloud_Q.pcd -t trans.txt
 ```
 
 The transformation matrix file contains a 4x4 matrix in ASCII format, each value separated by a space and each row in a new line. For example:

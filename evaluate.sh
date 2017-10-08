@@ -1,10 +1,20 @@
 #!/bin/bash
 
+## Usage help
+function print_usage(){
+	echo "${0##*/} [options]"
+	echo 
+	echo ' -h                         print this help message'
+	echo ' -v[--verbose]             verbose execution'
+	echo ' -e[--exclude-dirs]=dirs    list of folder to exclude, separated by commas (e.g. dir1,dir2)'
+	echo
+}
+
 # Macros
 DATASET_DIR=dataset
 FGR=./FastGlobalRegistration/build/FastGlobalRegistration
 
-# Run the evaluation or 3D registration algorithms
+# Hello string!
 cat << EOF
   ____  _____    _____            _     _             _   _             
  |___ \|  __ \  |  __ \          (_)   | |           | | (_)            
@@ -17,9 +27,38 @@ cat << EOF
 
 EOF
 
-for D in `find $DATASET_DIR/* -type d`
+verbose_flag=""
+exclude="/"
+
+# Parsing command line arguments
+for i in "$@"
 do
-    echo "Evaluating 'Fast Global Registration' on: $D"
-    $FGR -p $D/ptCloud_P.pcd -q $D/ptCloud_Q.pcd -r $D/FGR_report.html > $D/fgr.log
-    $FGR -p $D/ptCloud_P.pcd -q $D/ptCloud_Q.pcd -c -n 12 -r $D/FGR_report_CF.html > $D/fgr_cf.log
+case $i in
+    -e=*|--exclude-dir=*)
+	    exclude="${i#*=}"
+		exclude=${exclude//,/|} #replace commas with |
+	    shift
+    	;;
+    -h|--help)
+	  	print_usage
+	  	exit 0
+  		;;
+    -v|--verbose)
+	    verbose_flag="-v"
+	    shift
+    	;;
+    *)
+		# unknown option
+    	;;
+esac
 done
+
+
+for D in `find $DATASET_DIR/* -type d | grep -wvFE $exclude`
+do
+	echo "Evaluating 'Fast Global Registration' on: $D"
+    $FGR -p $D/ptCloud_P.pcd -q $D/ptCloud_Q.pcd $verbose_flag -o FGR_trans.txt -r $D/FGR_report.html > $D/fgr.log
+    $FGR -p $D/ptCloud_P.pcd -q $D/ptCloud_Q.pcd $verbose_flag -c -n 12 -o FGR_CF_trans.txt -r $D/FGR_report_CF.html > $D/fgr_cf.log
+done
+
+

@@ -2,9 +2,9 @@
 
 ## Introduction
 
-This is an open source C++ implementation based on the technique presented in the following [paper](https://doi.org/10.1007/978-3-319-46475-6_47)):
+This is an open source C++ implementation based on the technique presented in the following [paper](https://doi.org/10.1007/978-3-319-46475-6_47):
 
-Zhou QY., Park J., Koltun V. *Fast Global Registration*. Computer Vision – ECCV 2016, vol 9906
+Zhou QY., Park J., Koltun V. *Fast Global Registration*. Computer Vision – ECCV 2016
 
 ## Dependencies
 * [CMake](https://cmake.org/)
@@ -30,7 +30,7 @@ Tested and MacOS 10.12.
 The FastGlobalRegistration program takes two point clouds, P and Q, in pcd format:
 
 ```
-> FastGlobalRegistration -p pointcloud_P.pcd -q pointcloud_Q.pcd
+> ./FastGlobalRegistration -p pointcloud_P.pcd -q pointcloud_Q.pcd
 ```
 
 and prints the estimated rigid transformation matrix that aligns Q to P.
