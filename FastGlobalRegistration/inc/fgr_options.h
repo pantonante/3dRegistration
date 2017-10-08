@@ -18,6 +18,7 @@ public:
 	int 	tuple_max_count;
 	float 	normals_search_radius;
 	float 	fpfh_search_radius;
+	float	stop_mse;
     std::string ptCloudP_filename, ptCloudQ_filename;
     std::string outputfile, fitnessfile, reportfile;
 

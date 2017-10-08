@@ -33,6 +33,8 @@ int FGROptions::parse(int argc, char** argv)
         "Use closed form solution for transformation estimation.\n")
       ("div-factor",            po::value<float>(&div_factor)->default_value(DIV_FACTOR), 
         "Division factor used for graduated non-convexity.\n")
+      ("stop-rmse",            po::value<float>(&stop_mse)->default_value(STOP_RMSE), 
+        "Division factor used for graduated non-convexity.\n")
       ("max-corr-dist",         po::value<float>(&max_corr_dist)->default_value(MAX_CORR_DIST), 
         "Maximum correspondence distance (also see abs-scale).\n")
       ("iterations,n",          po::value<int>(&iteration_number)->default_value(ITERATION_NUMBER),
@@ -73,6 +75,9 @@ int FGROptions::parse(int argc, char** argv)
 	    }
 
 	    po::notify(vm);
+
+        stop_mse = stop_mse*stop_mse; // the user puts the RMSE, we need the MSE
+
 	} catch (po::error& e) { 
 		std::cerr << "ERROR: " << e.what() << std::endl << std::endl;
 		std::cout << make_usage_string_(basename_(argv[0]), all_options, p) << '\n';

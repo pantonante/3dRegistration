@@ -70,10 +70,8 @@ float CPUTimer::tocSeconds(){
 void CPUTimer::toc(std::string name){
   timespec elapsedTimeCPUTimer = this->toc();
 
-  cout<<endl;
   cout<<"=====  TIMING ["<<name<<"] is ";
-  cout<< elapsedTimeCPUTimer.tv_sec << "." << elapsedTimeCPUTimer.tv_nsec << " s" << endl;          
-  cout << endl;
+  cout<< elapsedTimeCPUTimer.tv_sec << "." << elapsedTimeCPUTimer.tv_nsec << " s" << endl;
   
   float seconds=elapsedTimeCPUTimer.tv_sec + elapsedTimeCPUTimer.tv_nsec / 1e9f;
 
@@ -105,7 +103,7 @@ std::string CPUTimer::getMeasurements(){
     std::stringstream ss;
 
     for(it_type it = timingsMap.begin(); it != timingsMap.end(); ++it) {
-        ss<<it->first<<": "<<it->second<<"s\n";
+        ss<<it->first<<": "<<it->second<<" s\n";
     }
     return ss.str();
 }

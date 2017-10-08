@@ -4,10 +4,13 @@
 Eigen::Matrix4f FastGlobalRegistration::performRegistration(){   
 	timer_.tic();
 	AdvancedMatching();
+	timer_.toc("Matching");
+
+	timer_.tic();
 	if(closed_form)
-		OptimizePairwise_ClosedForm(true, iteration_number);
+		OptimizePairwise_ClosedForm(iteration_number);
 	else
-		OptimizePairwise(true, iteration_number);
+		OptimizePairwise(iteration_number);
 	timer_.toc("Registration");
 	return GetTrans();
 }
@@ -37,15 +40,15 @@ FastGlobalRegistration::FastGlobalRegistration(pcl::PointCloud<pcl::PointXYZ>::P
 	pointcloud_.push_back(pts_Q);
 
 	/* Normalization */
-	timer_.tic();
-	
+	timer_.tic();	
 	NormalizePoints(); // don't skip this passage before computing FPFH!
+	timer_.toc("Normalization");
 
 	/* Features */
+	timer_.tic();
 	pcl::PointCloud<pcl::FPFHSignature33>::Ptr fpfh_P = computeFPFH(ptCloud_P);
     pcl::PointCloud<pcl::FPFHSignature33>::Ptr fpfh_Q = computeFPFH(ptCloud_Q);
-
-    timer_.toc("FPFH estimation and normalization");
+    timer_.toc("Features computation");
 
     //data structure filling
     for(pcl::PointCloud<pcl::FPFHSignature33>::iterator it = fpfh_P->begin(); it != fpfh_P->end(); it++){ 
@@ -435,7 +438,7 @@ void FastGlobalRegistration::NormalizePoints()
 	}
 }
 
-double FastGlobalRegistration::OptimizePairwise(bool decrease_mu_, int numIter_)
+double FastGlobalRegistration::OptimizePairwise(int numIter_)
 {
 	if(verbose)
 		cout<<TAG<<"Pairwise rigid pose optimization (iterative)"<<endl;
@@ -467,12 +470,12 @@ double FastGlobalRegistration::OptimizePairwise(bool decrease_mu_, int numIter_)
 
 	for (int itr = 0; itr < numIter; itr++) {
 
+		if(itr > 0 && (par <= max_corr_dist || fitness[fitness.size()-1]<=stop_mse))
+			break;
+
 		// graduated non-convexity.
-		if (decrease_mu_)
-		{
-			if (itr % 4 == 0 && par > max_corr_dist) {
-				par /= div_factor;
-			}
+		if (itr % 4 == 0) {
+			par /= div_factor;
 		}
 
 		const int nvariable = 6;	// 3 for rotation and 3 for translation
@@ -558,7 +561,7 @@ double FastGlobalRegistration::OptimizePairwise(bool decrease_mu_, int numIter_)
 
 //http://jackhunt.uk/github%20repositories/3d%20registration/2017/08/24/horns-method.html
 //http://graphics.stanford.edu/~smr/ICP/comparison/eggert_comparison_mva97.pdf
-double FastGlobalRegistration::OptimizePairwise_ClosedForm(bool decrease_mu_, int numIter_)
+double FastGlobalRegistration::OptimizePairwise_ClosedForm(int numIter_)
 {
 	if(verbose)
 		cout<<TAG<<"Pairwise rigid pose optimization (closed form)"<<endl;
@@ -590,12 +593,14 @@ double FastGlobalRegistration::OptimizePairwise_ClosedForm(bool decrease_mu_, in
 		Points p_corr, q_corr;
 		vector<float> align_error;
 
+		if(itr > 0 && fitness[fitness.size()-1]<=stop_mse)
+			break;
+
 		// graduated non-convexity.
-		if (decrease_mu_)
-		{
-			if (par > max_corr_dist) {
-				par /= div_factor;
-			}
+		if (par > max_corr_dist) {
+			par /= div_factor;
+		}else{
+			break;
 		}
 
 		for (int c = 0; c < corres_.size(); c++) {

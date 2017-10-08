@@ -48,23 +48,24 @@ int main(int argc, char** argv)
 	// Global Registration
 	FastGlobalRegistration fgr(ptCloud_P, ptCloud_Q, options.verbose);
 	fgr.closed_form				= options.closed_form;
-	fgr.use_absolute_scale 		= options.use_absolute_scale;	// Measure distance in absolute scale (1) or in scale relative to the diameter of the model (0)
-	fgr.div_factor 				= options.div_factor; 			// Division factor used for graduated non-convexity
-	fgr.max_corr_dist 			= options.max_corr_dist;		// Maximum correspondence distance (also see comment of USE_ABSOLUTE_SCALE)
-	fgr.iteration_number 		= options.iteration_number;		// Maximum number of iteration
-	fgr.tuple_scale 			= options.tuple_scale;			// Similarity measure used for tuples of feature points.
-	fgr.tuple_max_count 		= options.tuple_max_count;		// Maximum tuple numbers.
-	fgr.normals_search_radius 	= options.normals_search_radius;// Normals estimation search radius
-	fgr.fpfh_search_radius 		= options.fpfh_search_radius;	// FPFH estimation search radius
+	fgr.use_absolute_scale 		= options.use_absolute_scale;		// Measure distance in absolute scale (1) or in scale relative to the diameter of the model (0)
+	fgr.div_factor 				= options.div_factor; 				// Division factor used for graduated non-convexity
+	fgr.max_corr_dist 			= options.max_corr_dist;			// Maximum correspondence distance (also see comment of USE_ABSOLUTE_SCALE)
+	fgr.iteration_number 		= options.iteration_number;			// Maximum number of iteration
+	fgr.tuple_scale 			= options.tuple_scale;				// Similarity measure used for tuples of feature points.
+	fgr.tuple_max_count 		= options.tuple_max_count;			// Maximum tuple numbers.
+	fgr.stop_mse				= options.stop_mse;					// Stop criteria
+	fgr.normals_search_radius 	= options.normals_search_radius;	// Normals estimation search radius
+	fgr.fpfh_search_radius 		= options.fpfh_search_radius;		// FPFH estimation search radius
 	Eigen::Matrix4f T = fgr.performRegistration();
 
 	cout<<"--------------------------------------------------"<<endl;
 	cout<<"Transformation matrix: "<<endl;
     cout<<T<<endl;
     cout<<"--------------------------------------------------"<<endl;
-	cout<<"RMSE: "<<fgr.getRMSE()<<endl;
+	cout<<"RMSE: "<< fgr.getRMSE()<<endl;
 	cout<<"--------------------------------------------------"<<endl;
-	cout<<"Time: "<<fgr.getTiming()<<endl;
+	cout<<fgr.getTiming()<<endl;
 	cout<<"--------------------------------------------------"<<endl<<endl;
 
     // Save transformation matrix
@@ -81,8 +82,10 @@ int main(int argc, char** argv)
     	ofstream fid;
 		fid.open (options.fitnessfile);
     	for (int i = 0; i < fgr.fitness.size(); i++)
-    		fid << i<<","<<fgr.fitness[i] << endl;
+    		fid << i<<","<< sqrt(fgr.fitness[i]) << endl;
 		fid.close();
     }
+
+    // Report generation
     generateReport(fgr, options.reportfile);
 }

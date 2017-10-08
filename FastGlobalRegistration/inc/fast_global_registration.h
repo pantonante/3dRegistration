@@ -37,14 +37,16 @@ public:
 	int 	iteration_number 		= ITERATION_NUMBER;		// Maximum number of iteration
 	float 	tuple_scale 			= TUPLE_SCALE;			// Similarity measure used for tuples of feature points.
 	int 	tuple_max_count 		= TUPLE_MAX_CNT;		// Maximum tuple numbers.
+	float 	stop_mse				= STOP_RMSE*STOP_RMSE;	// Stop criteria
 	float 	normals_search_radius 	= NORMALS_SEARCH_RAD;	// Normals estimation search radius
 	float 	fpfh_search_radius 		= FPFH_SEARCH_RAD;		// FPFH estimation search radius
-	vector<float> fitness;
+
+	vector<float> fitness; 									// MSE over iterations
 
 	FastGlobalRegistration(pcl::PointCloud<pcl::PointXYZ>::Ptr ptCloud_P, pcl::PointCloud<pcl::PointXYZ>::Ptr ptCloud_Q, bool verbose=false);
 	Eigen::Matrix4f performRegistration();
 	Eigen::Matrix4f GetTrans();
-	inline float getRMSE(){ return accumulate(fitness.begin(), fitness.end(), 0.0) / fitness.size(); }
+	inline float getRMSE(){ return sqrt(fitness[fitness.size()-1]); }
 	inline string getTiming(){return timer_.getMeasurements(); }
 
 private:
@@ -66,8 +68,8 @@ private:
 							int nn);
 	void AdvancedMatching();
 	void NormalizePoints();
-	double OptimizePairwise(bool decrease_mu_, int numIter_);
-	double OptimizePairwise_ClosedForm(bool decrease_mu_, int numIter_);
+	double OptimizePairwise(int numIter_);
+	double OptimizePairwise_ClosedForm(int numIter_);
 };
 
 #endif

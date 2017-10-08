@@ -67,7 +67,7 @@ void generateReport(FastGlobalRegistration fgr, std::string filename){
 	
 	/* Body */
 	fid<< "<body>"<<endl;
-	fid<< "<h1 align=center>Fast Global Registration </h1>"<<endl;
+	fid<< "<h1 align=center>Fast Global Registration</h1>"<<endl;
 
 	/* Transformation matrix */
 	fid<< "<h3>Transformation matrix</h3>"<<endl;
@@ -111,8 +111,8 @@ void generateReport(FastGlobalRegistration fgr, std::string filename){
 	/* RMSE plot data */
 	fid<< "<script>"<<endl;
 	fid<< "var trace = {"<<endl;
-	fid<< "\tx: [";	for (int i = 1; i < fgr.fitness.size(); i++) fid<<i<<","; fid<< fgr.fitness.size()<<"],"<<endl;
-	fid<< "\ty: ["; for (int i = 0; i < fgr.fitness.size()-1; i++) fid<<fgr.fitness[i]<<","; fid<< fgr.fitness[fgr.fitness.size()-1]<<"],"<<endl;
+	fid<< "\tx: [";	for (int i = 1; i < fgr.fitness.size(); i++) fid<<i<<","; fid<<fgr.fitness.size()<<"],"<<endl;
+	fid<< "\ty: ["; for (int i = 0; i < fgr.fitness.size()-1; i++) fid<<sqrt(fgr.fitness[i])<<","; fid<< sqrt(fgr.fitness[fgr.fitness.size()-1])<<"],"<<endl;
 	fid<< "\tmode: 'markers'"<<endl;
 	fid<< "};"<<endl;
 	fid<< "var data = [ trace ];"<<endl;
@@ -125,9 +125,10 @@ void generateReport(FastGlobalRegistration fgr, std::string filename){
 	fid<< "<div><table class=\"parameters\">"<<endl;
 	fid<< "<tr><td>Closed Form</td><td>"; if(fgr.closed_form) fid<<"yes"; else fid<<"no"; fid<<"</td>"<<endl;
 	fid<< "<tr><td>Scale</td><td>";	if(fgr.use_absolute_scale) fid<<"absolute"; else fid<<"relative"; fid<<"</td>"<<endl;
+	fid<< "<tr><td>Stop RMSE</td><td>"<< sqrt(fgr.stop_mse) <<"</td>"<<endl;
 	fid<< "<tr><td>Div. factor</td><td>"<< fgr.div_factor <<"</td>"<<endl;
 	fid<< "<tr><td>Max. corelation distance</td><td>"<< fgr.max_corr_dist<<"</td>"<<endl;
-	fid<< "<tr><td>Number of iterations</td><td>"<< fgr.iteration_number <<"</td>"<<endl;
+	fid<< "<tr><td>Max. number of iterations</td><td>"<< fgr.iteration_number <<"</td>"<<endl;
 	fid<< "<tr><td>Similarity measure</td><td>"<< fgr.tuple_scale <<"</td>"<<endl;
 	fid<< "<tr><td>Max. corr. tuples</td><td>"<< fgr.tuple_max_count <<"</td>"<<endl;
 	fid<< "<tr><td>Normals search radius</td><td>"<< fgr.normals_search_radius <<"</td>"<<endl;

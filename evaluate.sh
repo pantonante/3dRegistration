@@ -37,7 +37,7 @@ do
 case $i in
     -e=*|--exclude-dir=*)
 	    exclude="${i#*=}"
-		exclude=${exclude//,/|} #replace commas with |
+		  exclude=${exclude//,/|} #replace commas with |
 	    shift
     	;;
     -h|--help)
@@ -59,7 +59,7 @@ for D in `find $DATASET_DIR/* -type d | grep -wvFE $exclude`
 do
 	echo "Evaluating 'Fast Global Registration' on: $D"
     $FGR -p $D/ptCloud_P.pcd -q $D/ptCloud_Q.pcd $ADDITIONAL_FLAGS $verbose_flag -o $D/FGR_trans.txt -r $D/FGR_report.html > $D/fgr.log
-    $FGR -p $D/ptCloud_P.pcd -q $D/ptCloud_Q.pcd $ADDITIONAL_FLAGS $verbose_flag -c -n 12 -o $D/FGR_CF_trans.txt -r $D/FGR_report_CF.html > $D/fgr_cf.log
+    $FGR -p $D/ptCloud_P.pcd -q $D/ptCloud_Q.pcd $ADDITIONAL_FLAGS $verbose_flag -c -o $D/FGR_CF_trans.txt -r $D/FGR_report_CF.html > $D/fgr_cf.log
 done
 
 

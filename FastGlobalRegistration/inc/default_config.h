@@ -11,5 +11,6 @@
 #define TUPLE_MAX_CNT		1000
 #define NORMALS_SEARCH_RAD	0.03
 #define FPFH_SEARCH_RAD		0.2
+#define STOP_RMSE			0.01
 
 #endif
