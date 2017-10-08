@@ -22,6 +22,8 @@ FastGlobalRegistration is compiled using CMake.
 > make
 ```
 
+To add the debug symbols (with no optimization) add the flag run `cmake -DCMAKE_BUILD_TYPE=Debug ..`.
+
 Tested and MacOS 10.12.
 
 

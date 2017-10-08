@@ -593,7 +593,7 @@ double FastGlobalRegistration::OptimizePairwise_ClosedForm(bool decrease_mu_, in
 		// graduated non-convexity.
 		if (decrease_mu_)
 		{
-			if (itr % 4 == 0 && par > max_corr_dist) {
+			if (par > max_corr_dist) {
 				par /= div_factor;
 			}
 		}

@@ -1,0 +1,8 @@
+# MacOS
+.DS_Store
+
+# Temp files
+*.m~
+ptCloud_P.pcd
+ptCloud_Q.pcd
+trans.txt
