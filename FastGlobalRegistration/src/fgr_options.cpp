@@ -34,7 +34,7 @@ int FGROptions::parse(int argc, char** argv)
       ("div-factor",            po::value<float>(&div_factor)->default_value(DIV_FACTOR), 
         "Division factor used for graduated non-convexity.\n")
       ("stop-rmse",            po::value<float>(&stop_mse)->default_value(STOP_RMSE), 
-        "Division factor used for graduated non-convexity.\n")
+        "Optimization stops when reach the given RMSE.\n")
       ("max-corr-dist",         po::value<float>(&max_corr_dist)->default_value(MAX_CORR_DIST), 
         "Maximum correspondence distance (also see abs-scale).\n")
       ("iterations,n",          po::value<int>(&iteration_number)->default_value(ITERATION_NUMBER),
