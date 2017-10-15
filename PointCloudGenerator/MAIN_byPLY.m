@@ -1,6 +1,6 @@
 plyFile = 'bunny/reconstruction/bun_zipper_res3.ply';
-sigma = 0.03; % noise
-beta = 5/100; % outliers percentage
+sigma = 0.05; % noise
+beta = 0; % outliers percentage
 
 %% Read PLY
 ptCloud_Q = pcread(plyFile);

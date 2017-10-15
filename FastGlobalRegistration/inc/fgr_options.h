@@ -20,7 +20,7 @@ public:
 	float 	fpfh_search_radius;
 	float	stop_mse;
     std::string ptCloudP_filename, ptCloudQ_filename;
-    std::string outputfile, fitnessfile, reportfile;
+    std::string outputfile, HTMLreport, JSONreport;
 
 
 	enum ReturnCode {OPTPARSE_SUCCESS,OPTPARSE_FAIL,OPTPARSE_HELP};

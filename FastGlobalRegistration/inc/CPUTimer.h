@@ -4,6 +4,7 @@
 #include <iostream>
 #include <string>
 #include <map>
+#include <vector>
 #include <time.h>
 
 #ifndef CLOCK_REALTIME
@@ -21,6 +22,9 @@
 #include <sys/time.h>
 #endif
 
+typedef std::pair<std::string,float> TimingInfo;
+typedef std::map<std::string,float>::iterator it_type;
+
 class CPUTimer {
  private:
   timespec startTime;
@@ -30,6 +34,7 @@ class CPUTimer {
   bool stopWasSet;
 
   void getTime(struct timespec *ts);
+  timespec toc();
 
   std::map<std::string,float> timingsMap;
 
@@ -38,14 +43,11 @@ class CPUTimer {
   ~CPUTimer();
 
   void tic();
-  timespec toc();
   void toc(std::string name);
 
-  float tocSeconds();
-
-  void printAllTimings();
-
-  std::string getHeader();
-  std::string getMeasurements();
+  float totalTiming();
+  std::vector<TimingInfo> getMeasurements();
+  std::string allTimings();
 };
+
 #endif

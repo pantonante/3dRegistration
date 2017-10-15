@@ -76,16 +76,8 @@ int main(int argc, char** argv)
 		fid << T;
 		fid.close();
     }
-    //save fitness value over iterations
-    if(options.fitnessfile.compare("")){
-    	cout<<"Saving RMSE to file..."<<endl;
-    	ofstream fid;
-		fid.open (options.fitnessfile);
-    	for (int i = 0; i < fgr.fitness.size(); i++)
-    		fid << i<<","<< sqrt(fgr.fitness[i]) << endl;
-		fid.close();
-    }
-
-    // Report generation
-    generateReport(fgr, options.reportfile);
+    
+    // Report
+    JSONreport(fgr, options.JSONreport);
+    HTMLreport(fgr, options.HTMLreport);
 }

@@ -62,48 +62,40 @@ timespec CPUTimer::toc() {
   return temp;
 }
 
-float CPUTimer::tocSeconds(){
-    timespec elapsedTimeCPUTimer = this->toc();
-    return elapsedTimeCPUTimer.tv_sec + elapsedTimeCPUTimer.tv_nsec / 1e9f;
-}
-
 void CPUTimer::toc(std::string name){
   timespec elapsedTimeCPUTimer = this->toc();
 
-  cout<<"=====  TIMING ["<<name<<"] is ";
-  cout<< elapsedTimeCPUTimer.tv_sec << "." << elapsedTimeCPUTimer.tv_nsec << " s" << endl;
+  //cout<<"=====  TIMING ["<<name<<"] is ";
+  //cout<< elapsedTimeCPUTimer.tv_sec << "." << elapsedTimeCPUTimer.tv_nsec << " s" << endl;
   
   float seconds=elapsedTimeCPUTimer.tv_sec + elapsedTimeCPUTimer.tv_nsec / 1e9f;
-
   timingsMap[name]=seconds;
 }
 
-void CPUTimer::printAllTimings(){
-  typedef std::map<std::string,float>::iterator it_type;
-    cout<<"=====  TIMINGS ===="<<endl;
+vector<TimingInfo> CPUTimer::getMeasurements(){
+  //typedef std::map<std::string,float>::iterator it_type;
+  vector<TimingInfo> ti;
 
-  for(it_type it = timingsMap.begin(); it != timingsMap.end(); ++it) {
-    cout<< left << setw(20) << it->first<<":\t";
-    printf("%0.3f\n",it->second);
-  }
+  for(it_type it = timingsMap.begin(); it != timingsMap.end(); ++it) 
+    ti.push_back(make_pair(it->first, it->second));
+
+  return ti;
 }
 
-string CPUTimer::getHeader(){
-    typedef std::map<std::string,float>::iterator it_type;
-    std::stringstream ss;
+string CPUTimer::allTimings(){
+  //typedef std::map<std::string,float>::iterator it_type;
+  stringstream ss;
 
-    for(it_type it = timingsMap.begin(); it != timingsMap.end(); ++it) {
-        ss<<","<<it->first;
-    }
-    return ss.str();
+  for(it_type it = timingsMap.begin(); it != timingsMap.end(); ++it)
+    ss << left << setw(20) << it->first << ":\t" << it->second << " sec" <<endl;
+  ss << "TOT:\t" << totalTiming() << " sec";
+  return ss.str();
 }
 
-std::string CPUTimer::getMeasurements(){
-    typedef std::map<std::string,float>::iterator it_type;
-    std::stringstream ss;
-
-    for(it_type it = timingsMap.begin(); it != timingsMap.end(); ++it) {
-        ss<<it->first<<": "<<it->second<<" s\n";
-    }
-    return ss.str();
+float CPUTimer::totalTiming(){
+  //typedef std::map<std::string,float>::iterator it_type;
+  float tot = 0;
+  for(it_type it = timingsMap.begin(); it != timingsMap.end(); ++it)
+    tot+=it->second;
+  return tot;
 }

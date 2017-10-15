@@ -3,7 +3,8 @@
 
 /* --------------------------------------- */
 
-#define USE_OMP 	//enables OpenMP
+#define NO_USE_OMP 	//enables OpenMP
+#define MIN_NUM_OF_CORR 5
 
 /* --------------------------------------- */
 
@@ -46,8 +47,16 @@ public:
 	FastGlobalRegistration(pcl::PointCloud<pcl::PointXYZ>::Ptr ptCloud_P, pcl::PointCloud<pcl::PointXYZ>::Ptr ptCloud_Q, bool verbose=false);
 	Eigen::Matrix4f performRegistration();
 	Eigen::Matrix4f GetTrans();
-	inline float getRMSE(){ return sqrt(fitness[fitness.size()-1]); }
-	inline string getTiming(){return timer_.getMeasurements(); }
+
+	inline float getRMSE(){ 
+		if (fitness.size()>0) 
+			return sqrt(fitness[fitness.size()-1]);
+		else
+			return -1;
+	}
+	inline string getTiming(){return timer_.allTimings(); }
+	inline vector<TimingInfo> getTimingInfo(){return timer_.getMeasurements();}
+	inline int getNumCorrespondences(){return corres_.size();}
 
 private:
 	CPUTimer timer_;

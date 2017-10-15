@@ -460,7 +460,7 @@ double FastGlobalRegistration::OptimizePairwise(int numIter_)
 	for (int cnt = 0; cnt < npcj; cnt++)
 		pcj_copy[cnt] = pointcloud_[j][cnt];
 
-	if (corres_.size() < 10)
+	if (corres_.size() < MIN_NUM_OF_CORR)
 		return -1;
 
 	std::vector<double> s(corres_.size(), 1.0);

@@ -19,10 +19,11 @@ int FGROptions::parse(int argc, char** argv)
         "Verbose output.\n")
       ("output,o",              po::value<std::string>(&outputfile)->default_value(""),
         "Output filename, save the transformation matrix.\n")
-      ("fitness,f",              po::value<std::string>(&fitnessfile)->default_value(""),
-        "Save to file the RMSE in each iteration.\n")
-      ("report,r",              po::value<std::string>(&reportfile)->default_value(""),
+      ("report,r",              po::value<std::string>(&HTMLreport)->default_value(""),
         "Save an HTML report.\n")
+      ("json,j",                po::value<std::string>(&JSONreport)->default_value(""),
+        "Save the report as JSON file.\n")
+      
     ;
 
     po::options_description algpar("Algorithm parameters");

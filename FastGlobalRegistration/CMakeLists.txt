@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 2.6 FATAL_ERROR)
 project(FAST_GLOBAL_REGISTRATION)
+set (CMAKE_CXX_STANDARD 11)
 include_directories(${CMAKE_SOURCE_DIR}/inc)
 
 find_package(Boost COMPONENTS program_options REQUIRED)
