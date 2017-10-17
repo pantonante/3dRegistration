@@ -13,8 +13,10 @@ using namespace std;
 
 int main(int argc, char** argv)
 {
+    // display cool header "3D Registration" (in art.h)
 	cout<<CLI_HEADER<<endl<<endl;
 
+	// Instantiate and parse fast global registration options
 	FGROptions options;
 
     int rt = options.parse(argc, argv);
@@ -25,7 +27,7 @@ int main(int argc, char** argv)
         	return ERROR_IN_COMMAND_LINE;
     }
 
-    // Load point Clouds
+    // Instantiate and load point Clouds
 	pcl::PointCloud<pcl::PointXYZ>::Ptr ptCloud_P (new pcl::PointCloud<pcl::PointXYZ> ());
 	pcl::PointCloud<pcl::PointXYZ>::Ptr ptCloud_Q (new pcl::PointCloud<pcl::PointXYZ> ());
 
@@ -45,7 +47,7 @@ int main(int argc, char** argv)
 	if(options.verbose)
 		cout<<endl<<"Warning: verbose execution enabled, timing information might be wrong."<<endl<<endl;
 
-	// Global Registration
+	// Instantiate Global Registration engine
 	FastGlobalRegistration fgr(ptCloud_P, ptCloud_Q, options.verbose);
 	fgr.closed_form				= options.closed_form;
 	fgr.use_absolute_scale 		= options.use_absolute_scale;		// Measure distance in absolute scale (1) or in scale relative to the diameter of the model (0)
@@ -57,8 +59,9 @@ int main(int argc, char** argv)
 	fgr.stop_mse				= options.stop_mse;					// Stop criteria
 	fgr.normals_search_radius 	= options.normals_search_radius;	// Normals estimation search radius
 	fgr.fpfh_search_radius 		= options.fpfh_search_radius;		// FPFH estimation search radius
-	Eigen::Matrix4f T = fgr.performRegistration();
 
+	// Perform Fast Global Registration and display results
+	Eigen::Matrix4f T = fgr.performRegistration();
 	cout<<"--------------------------------------------------"<<endl;
 	cout<<"Transformation matrix: "<<endl;
     cout<<T<<endl;
