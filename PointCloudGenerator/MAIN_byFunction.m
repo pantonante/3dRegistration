@@ -4,7 +4,7 @@
 % a random transformation, possibly adding noise and outliers. 
 % Author: Pasquale Antonante
 % Date: 
-% MIT Copyright (c) Pasquale Antonante
+% MIT Copyright (c) Pasquale Antonante, Luca Carlone
 
 clear all
 close all

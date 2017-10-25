@@ -3,7 +3,7 @@
 
 /* --------------------------------------- */
 
-#define NO_USE_OMP 	//enables OpenMP
+#define USE_OMP 	//enables OpenMP
 #define MIN_NUM_OF_CORR 5
 
 /* --------------------------------------- */

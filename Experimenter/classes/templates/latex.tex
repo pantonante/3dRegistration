@@ -1,0 +1,81 @@
+{% extends "article.tex" %}
+
+
+{# ===== MAIN CONTENT CREATOR ===== #}
+{% block content %}
+\section{ {{name}} }
+{% for plot in plots %}
+
+\subsection{ {{ plot.title }} }
+{% if "lineplot" in plot.type %}
+{{ lineplot(plot) }}
+{% elif "scatter3" in plot.type %}
+{{ scatter3(plot) }}
+{% elif "boxplot" in plot.type %}
+{{ boxplot(plot) }}
+{% endif %}
+
+{% endfor %}
+{% endblock %}
+
+
+
+{# ===== LINE PLOT MACROS ===== #}
+{% macro lineplot(plot) -%}
+\begin{tikzpicture}
+\begin{axis}[width=\linewidth, xlabel={ {{plot['x-axis']}} },ylabel={ {{plot['y-axis']}} }, grid=major]
+{% for datapoint in plot.data %}
+\addplot coordinates {
+{% for pt in datapoint.X %}
+({{ pt }}, {{ datapoint.Y[loop.index0] }} )
+{% endfor %}
+};
+\addlegendentry{ {{datapoint.legend}} }
+{% endfor %}
+\end{axis}
+\end{tikzpicture}
+{% endmacro %}
+
+
+{# ===== SCATTER 3 PLOT MACROS ===== #}
+{% macro scatter3(plot) -%}
+\begin{tikzpicture} 
+\begin{axis}[width=\linewidth,xlabel={ {{plot['x-axis']}} },ylabel={ {{plot['y-axis']}} },zlabel={ {{plot['z-axis']}} },colorbar] 
+{% for datapoint in plot.data %}
+\addplot3[only marks, scatter] coordinates {
+{% for pt in datapoint.X %}
+({{ pt }}, {{datapoint.Y[loop.index0]}}, {{datapoint.Z[loop.index0]}} )
+{% endfor %}
+};
+{% endfor %}
+\end{axis} 
+\end{tikzpicture} 
+{% endmacro %}
+
+{# ===== BOX PLOT MACROS ===== #}
+{% macro boxplot(plot) -%}
+\begin{tikzpicture}
+  \begin{axis}
+    [title = { {{plot.title}} },
+    ylabel = { {{plot['y-axis']}} },
+    width=\linewidth,
+    boxplot/draw direction=y,
+    xtick={ {% for key in plot.precomputed %} {{loop.index}}{{ "," if not loop.last }} {% endfor %} },
+    xticklabels={ {% for key in plot.precomputed %} {{key}} {{ "," if not loop.last }} {% endfor %} },
+    x tick label style={font=\footnotesize, text width=2.5cm, align=center}
+    ]
+{% for key in plot.precomputed %}
+\addplot+[mark = *, mark options = {red},
+    boxplot prepared={
+      lower whisker={{plot.precomputed[key][0]}},
+      lower quartile={{plot.precomputed[key][1]}},
+      median={{plot.precomputed[key][2]}},
+      average={{plot.precomputed[key][3]}},
+      upper quartile={{plot.precomputed[key][4]}},
+      upper whisker={{plot.precomputed[key][5]}}
+    }, color = blue
+    ] coordinates{};
+{% endfor %}
+\end{axis}
+\end{tikzpicture}
+{% endmacro %}

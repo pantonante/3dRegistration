@@ -3,6 +3,10 @@
 
 # Temp files
 *.m~
+*.conf~
 ptCloud_P.pcd
 ptCloud_Q.pcd
 trans.txt
+trans.mat
+dataset/
+

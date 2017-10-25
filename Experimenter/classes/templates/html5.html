@@ -1,0 +1,59 @@
+{% extends "boilerplate.html" %}
+
+
+{# ===== MAIN CONTENT CREATOR ===== #}
+{% block content %}
+<h1>{{name}}</h1>
+
+{% for plot in plots %}
+
+<h2> {{ plot.title }} </h2>
+{% if "lineplot" in plot.type %}
+{{ lineplot(plot, loop.index) }}
+{% elif "scatter3" in plot.type %}
+Not supported yet
+{% elif "boxplot" in plot.type %}
+{{ boxplot(plot, loop.index) }}
+{% endif %}
+
+{% endfor %}
+
+{% endblock %}
+
+
+{# ===== LINE PLOT MACROS ===== #}
+{% macro lineplot(plot, idx) -%}
+<div id="plot{{idx}}"></div>
+<script>
+	var data = [];
+{% for datapoint in plot.data %}
+	var trace = {
+	  x: [{{ datapoint.X|join(', ') }}],
+	  y: [{{ datapoint.Y|join(', ') }}],
+	  type: 'scatter',
+	  name: '{{datapoint.legend}}'
+	};
+
+	data.push(trace);
+{% endfor %}
+	Plotly.newPlot('plot{{idx}}', data);
+</script>
+{% endmacro %}
+
+
+{# ===== BOX PLOT MACROS ===== #}
+{% macro boxplot(plot, idx) -%}
+<div id="plot{{idx}}"></div>
+<script>
+	var data = [];
+{% for key in plot.data %}
+	var trace = {
+	  y: [{{ plot.data[key]|join(', ') }}],
+	  type: 'box',
+	  name: '{{key}}'
+	};
+	data.push(trace);
+{% endfor %}
+	Plotly.newPlot('plot{{idx}}', data);
+</script>
+{% endmacro %}

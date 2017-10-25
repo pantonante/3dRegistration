@@ -188,6 +188,7 @@ void JSONreport(FastGlobalRegistration fgr, std::string filename){
 		fid<< "\"RMSE\": [],"<<endl;
 	}
 	fid<< "\"num_correspondences\":" << fgr.getNumCorrespondences()<<","<<endl;
+	fid<< "\"completed\":" << (fgr.fitness.size()>0?"true":"false")<<","<<endl;
 	fid<< "\"timing\": ["<<endl;
 	vector<TimingInfo> ti = fgr.getTimingInfo();
 	for (int i = 0; i < ti.size(); i++){

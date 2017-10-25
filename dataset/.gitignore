@@ -1,9 +1,0 @@
-# MacOS
-.DS_Store
-
-
-
-*.html
-*.log
-*.txt
-!trans.txt

@@ -1,5 +1,4 @@
 function [ptCloud_P,T] = randomlyTransformPtCloud(ptCloud_Q,sigma,beta)
-
 %% Apply Random Transformation
 % Random transformation parameters
 max_rot = [2*pi 2*pi 2*pi];
