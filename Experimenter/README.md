@@ -17,7 +17,7 @@ The sets of point clouds and of parameters are described in the JSON file, which
 After the experiment the script generates a **LaTeX** or **HTML** report file with the error graphs (rotation and translation) for each parameter-experiment as follow:
 
 <p align="center">
-<img alt="Error function" src="http://latex.codecogs.com/svg.latex?%5Cbegin%7Balign%2A%7D%0D%0A%26%5Cepsilon_%7B%5Ctext%7Brotation%7D%7D%3D%5Ctext%7Bangle%7D%5Cbig%28R_%7B%5Ctext%7Bground%20truth%7D%7D%5Ccdot%20R_%7B%5Ctext%7Bestimated%7D%7D%5ET%5Cbig%29%5C%5C%0D%0A%26%5Cepsilon_%7B%5Ctext%7Btranslation%7D%7D%3D%5ClVert%20t_%7B%5Ctext%7Bground%20truth%7D%7D-t_%7B%5Ctext%7Bestimated%7D%7D%20%5CrVert%0D%0A%5Cend%7Balign%2A%7D">
+<img alt="Error function" src="http://latex.codecogs.com/svg.latex?%5Cbegin%7Balign%2A%7D%0D%0A%26%5Cepsilon_%7B%5Ctext%7Brotation%7D%7D%3D%5ClVert%5Ctext%7Bangle%7D%5Cbig%28R_%7B%5Ctext%7Bground%20truth%7D%7D%5Ccdot%20R_%7B%5Ctext%7Bestimated%7D%7D%5ET%5Cbig%29%5CrVert%5C%5C%0D%0A%26%5Cepsilon_%7B%5Ctext%7Btranslation%7D%7D%3D%5ClVert%20t_%7B%5Ctext%7Bground%20truth%7D%7D-t_%7B%5Ctext%7Bestimated%7D%7D%20%5CrVert%0D%0A%5Cend%7Balign%2A%7D">
 </p>
 
 

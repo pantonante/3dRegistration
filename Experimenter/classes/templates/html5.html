@@ -36,7 +36,14 @@ Not supported yet
 
 	data.push(trace);
 {% endfor %}
-	Plotly.newPlot('plot{{idx}}', data);
+	
+	var layout = {
+	  title: '{{plot.title}}',
+	  xaxis: { title: '{{plot['x-axis']}}' },
+	  yaxis: { title: '{{plot['y-axis']}}' }
+	}
+
+	Plotly.newPlot('plot{{idx}}', data, layout);
 </script>
 {% endmacro %}
 
@@ -54,6 +61,12 @@ Not supported yet
 	};
 	data.push(trace);
 {% endfor %}
-	Plotly.newPlot('plot{{idx}}', data);
+
+	var layout = {
+	  title: '{{plot.title}}',
+	  yaxis: { title: '{{plot['y-axis']}}' }
+	}
+
+	Plotly.newPlot('plot{{idx}}', data, layout);
 </script>
 {% endmacro %}

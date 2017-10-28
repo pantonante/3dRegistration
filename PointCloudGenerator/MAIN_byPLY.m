@@ -11,8 +11,8 @@ clc
 addpath('./lib')
 
 %% Set options:
-plyFile = 'bunny/reconstruction/bun_zipper_res3.ply';
-sigma = 0.05; % noise
+plyFile = 'data/tide.ply';
+sigma = 0; % noise
 beta = 0; % outliers percentage [0,1]
 
 %% Read PLY
@@ -23,6 +23,11 @@ disp(['Number of points: ', num2str(ptCloud_Q.Count)])
 [ptCloud_P,T] = randomlyTransformPtCloud(ptCloud_Q,sigma,beta);
 
 %% Save
-pcwrite(ptCloud_Q,'ptCloud_Q.pcd','Encoding','ascii');
-pcwrite(ptCloud_P,'ptCloud_P.pcd','Encoding','ascii');
-SaveTransformationMatrix(T,'trans.txt');
+pcwrite(ptCloud_Q,'../dataset/ptCloud_Q.pcd','Encoding','binary');
+pcwrite(ptCloud_P,'../dataset/ptCloud_P.pcd','Encoding','binary');
+SaveTransformationMatrix(T,'../dataset/trans.txt');
+
+%% Show
+pcshow(ptCloud_Q);
+hold on
+pcshow(ptCloud_P);

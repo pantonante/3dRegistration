@@ -12,23 +12,26 @@ clc
 
 addpath('./lib')
 
-plyFile = 'data/office.ply';
-output_folder = '../dataset/office_noise';
-output_basename = 'office';
+rng shuffle
 
-variable = 'outliers'; % possible values {'noise', 'outliers'}
+plyFile = 'data/bunny/reconstruction/bun_zipper_res3.ply';
+output_folder = '../dataset/bunny_noise';
+output_basename = 'bunny';
+
+variable = 'noise'; % possible values {'noise', 'outliers'}
 % Note: outliers is expressed as percentage [0,1]
-values = 0:0.005:0.1; % 0:0.03:0.7
+values = 0:0.005:0.1; % noise
+%values = 0:0.03:0.7; %outliers
 
 % Random transformation parameters
 max_rot = [ 2*pi, 2*pi, 2*pi ];
-min_t = [ 20, 20, 20 ]; % ensure no overlap
-max_t = [ 50, 50, 50];
+min_t = [ 0.16 0.16 0.16 ]; % ensure no overlap
+max_t = [ 20, 20, 20];
 
-% Downsampling
-donwsampling_ratio = 10; % if 0 does not downsample, see downsampling_method
+% Downsampling for point cloud P
+donwsampling_ratio = 0; % if 0 does not downsample, see downsampling_method
 downsampling_method = 'nonuniformGridSample'; % possible values ...
-    %... {'nonuniformGridSample', 'gridAverage'}, see `doc pcdownsample
+    %... {'nonuniformGridSample', 'gridAverage'}, see `doc pcdownsample`
 
 %% MAIN -- you should not need to edit from now on
 delta = 100/length(values); %percentage of the overall proces per pt.cloud
@@ -73,8 +76,8 @@ for i=1:length(values)
     ptCloudP_filename = fullfile(pwd,output_folder, curr_dir,'ptCloud_P.pcd');
     ptCloudQ_filename = fullfile(pwd,output_folder, curr_dir,'ptCloud_Q.pcd');
     trans_filename = fullfile(pwd,output_folder, curr_dir,'trans.txt');
-    pcwrite(ptCloud_Q,ptCloudQ_filename,'Encoding','ascii');
-    pcwrite(ptCloud_P,ptCloudP_filename,'Encoding','ascii');
+    pcwrite(ptCloud_Q,ptCloudQ_filename,'Encoding','binary');
+    pcwrite(ptCloud_P,ptCloudP_filename,'Encoding','binary');
     SaveTransformationMatrix(T,trans_filename);
     
     % Json descriptor

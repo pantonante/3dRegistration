@@ -6,6 +6,19 @@ This is an open source C++ implementation based on the technique presented in th
 
 Zhou QY., Park J., Koltun V. *Fast Global Registration*. Computer Vision – ECCV 2016
 
+## Objective
+Consider two point sets P and Q. Our task is to find a rigid transformation T that aligns Q to P. The algorithm optimizes a robust objective on correspondences K between P and Q. These correspondences are established by rapid feature matching (FPFH) that is performed before the objective is optimized. The correspondences are not recomputed during the optimization. The objective has the following form:
+
+<p align="center">
+<img src="http://latex.codecogs.com/svg.latex?E%28%5Cbm%7BT%7D%29%3D%5Csum_%7B%28p%2Cq%29%5Cin%5Cmathcal%7BK%7D%7D%5Crho%28%7B%5Cnorm%7Bq-%5Cbm%7BT%7Dp%7D%7D%29">
+</p>
+
+where (p,q) in K are the correspondent points in P and Q. The _robust penalty function_, si the _scaled Geman-McClure estimator_.
+
+<p align="center">
+<img src="http://latex.codecogs.com/svg.latex?%5Crho%28x%29%3D%5Cfrac%7B%5Cmu%20x%5E2%7D%7B%5Cmu%2Bx%5E2%7D">
+</p>
+
 ## Dependencies
 * [CMake](https://cmake.org/)
 * [PCL](http://pointclouds.org) 1.8 (this will install all the other dependencies)
@@ -74,12 +87,12 @@ The option `tuple-max-count` trades off between speed and accuracy. Increasing i
 By enabling the flag `-c` (default disabled), the transformation matrix is estimated by closed form solution. In particular, it's used the Horn’s method for the registration of 3D point clouds.
 
 ### Reports
-It is possible to export an HTML report of the registration process, it contains:
+It is possible to export a JSON od HTML report of the registration process, it contains:
 
 * Final transformation matrix
 * Timing information
 * RMSE vs/ iterations
-* A summary of the parameters 
+* A summary of the parameters
 
 ## License
 

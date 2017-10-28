@@ -11,6 +11,17 @@ import argparse
 import json
 
 class Experimenter:
+	"""
+	Class allowing to run parameters experiments of 3D registration algorithm automatically. Just describe it in a JSON file.
+	How to use:
+	```
+	with open("descriptor.json") as data_file:    
+	    desc = json.load(data_file)
+	exp = Experimenter(desc)
+	doc = exp.run_param_experiments(desc)
+	doc.render("output.html", "html") # or latex
+	```
+	"""
 
 	# random name for the report, make (reasonably) sure that you can run more instances in parallel
 	REPORT_FILENAME = 'report_' + ''.join(random.choices(string.ascii_uppercase + string.digits, k=6)) + '.json'
@@ -40,19 +51,25 @@ class Experimenter:
 		return desc["exe"] + flags
 
 	def run_cmd(self, cmd):
+		"""
+		Run the shell command (discarding the stdout and stderr)
+		"""
 		with open(os.devnull, 'w') as devnull: 
 			subprocess.run(shlex.split(cmd), stdout=devnull, stderr=devnull)
 		self.pbar.update()
 
 	def run_param_experiments(self, desc):
+		"""
+		Run all the experiment 
+		"""
 		timings = {}
 		doc = Templater(desc["name"])
 		test_parameters = ( par for par in desc["parameters"] if len(par['values'])>0 )
 		for par in test_parameters: # for each parameter listed in the descriptor file
 			plot_rot=Plot(par["name"]+", rotation error")
-			plot_rot.set_axis_label('sigma', 'Error')
+			plot_rot.set_axis_label(desc['dataset_variable'], 'Error (rad)')
 			plot_tra=Plot(par["name"]+", translation error")
-			plot_tra.set_axis_label('sigma', 'Error')
+			plot_tra.set_axis_label(desc['dataset_variable'], 'Error')
 			for val in par["values"]: # for each value listed for that parameter 
 				sigmas = []
 				y_rot = []
@@ -113,7 +130,7 @@ class Experimenter:
 		T = np.matrix(report['transformation'])
 		R = T[0:3,0:3]
 		t = T[0:3,3]
-		[z, y, x] = self.mat2euler(R_gnd.T.dot(R))
+		[x,y,z] = self.mat2euler(R_gnd.dot(R.transpose()))
 		y_rot = np.linalg.norm([x,y,z])
 		y_tra = np.linalg.norm(t-t_gnd)
 		return [y_rot,y_tra]
@@ -128,77 +145,20 @@ class Experimenter:
 		T = np.loadtxt(filename, delimiter=' ')
 		return T
 
-	def mat2euler(self, M, cy_thresh=None):
-	    ''' Euler angle vector from 3x3 matrix
+	def mat2euler(self, R):
+		sy = math.sqrt(R[0,0] * R[0,0] +  R[1,0] * R[1,0])
+		singular = sy < 1e-6
+		if not singular:
+		  x = math.atan2(R[2,1] , R[2,2])
+		  y = math.atan2(-R[2,0], sy)
+		  z = math.atan2(R[1,0], R[0,0])
+		else:
+		  x = math.atan2(-R[1,2], R[1,1])
+		  y = math.atan2(-R[2,0], sy)
+		  z = 0
 
-	    Uses the conventions above.
+		return np.array([x, y, z])
 
-	    Parameters
-	    ----------
-	    M : array-like, shape (3,3)
-	    cy_thresh : None or scalar, optional
-	       threshold below which to give up on straightforward arctan for
-	       estimating x rotation.  If None (default), estimate from
-	       precision of input.
-
-	    Returns
-	    -------
-	    z : scalar
-	    y : scalar
-	    x : scalar
-	       Rotations in radians around z, y, x axes, respectively
-
-	    Notes
-	    -----
-	    If there was no numerical error, the routine could be derived using
-	    Sympy expression for z then y then x rotation matrix, which is::
-
-	      [                       cos(y)*cos(z),                       -cos(y)*sin(z),         sin(y)],
-	      [cos(x)*sin(z) + cos(z)*sin(x)*sin(y), cos(x)*cos(z) - sin(x)*sin(y)*sin(z), -cos(y)*sin(x)],
-	      [sin(x)*sin(z) - cos(x)*cos(z)*sin(y), cos(z)*sin(x) + cos(x)*sin(y)*sin(z),  cos(x)*cos(y)]
-
-	    with the obvious derivations for z, y, and x
-
-	       z = atan2(-r12, r11)
-	       y = asin(r13)
-	       x = atan2(-r23, r33)
-
-	    Problems arise when cos(y) is close to zero, because both of::
-
-	       z = atan2(cos(y)*sin(z), cos(y)*cos(z))
-	       x = atan2(cos(y)*sin(x), cos(x)*cos(y))
-
-	    will be close to atan2(0, 0), and highly unstable.
-
-	    The ``cy`` fix for numerical instability below is from: *Graphics
-	    Gems IV*, Paul Heckbert (editor), Academic Press, 1994, ISBN:
-	    0123361559.  Specifically it comes from EulerAngles.c by Ken
-	    Shoemake, and deals with the case where cos(y) is close to zero:
-
-	    See: http://www.graphicsgems.org/
-
-	    The code appears to be licensed (from the website) as "can be used
-	    without restrictions".
-	    '''
-	    M = np.asarray(M)
-	    if cy_thresh is None:
-	        try:
-	            cy_thresh = np.finfo(M.dtype).eps * 4
-	        except ValueError:
-	            cy_thresh = _FLOAT_EPS_4
-	    r11, r12, r13, r21, r22, r23, r31, r32, r33 = M.flat
-	    # cy: sqrt((cos(y)*cos(z))**2 + (cos(x)*cos(y))**2)
-	    cy = math.sqrt(r33*r33 + r23*r23)
-	    if cy > cy_thresh: # cos(y) not close to zero, standard form
-	        z = math.atan2(-r12,  r11) # atan2(cos(y)*sin(z), cos(y)*cos(z))
-	        y = math.atan2(r13,  cy) # atan2(sin(y), cy)
-	        x = math.atan2(-r23, r33) # atan2(cos(y)*sin(x), cos(x)*cos(y))
-	    else: # cos(y) (close to) zero, so x -> 0.0 (see above)
-	        # so r21 -> sin(z), r22 -> cos(z) and
-	        z = math.atan2(r21,  r22)
-	        y = math.atan2(r13,  cy) # atan2(sin(y), cy)
-	        x = 0.0
-	    return z, y, x
 
 
 #############################################################################
@@ -234,7 +194,7 @@ def main():
 		exit()
 
 	tic = time.time()
-	print("## Evaluating on '" + desc["name"] + "'...")
+	print("## Evaluating '" + desc["name"] + "'...")
 	# Creating the experimenter class
 	exp = Experimenter(desc)
 	doc = exp.run_param_experiments(desc)
