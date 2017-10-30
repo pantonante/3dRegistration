@@ -122,7 +122,7 @@ To run the experiment, just run:
 python experimenter.py descriptor_file.json
 ```
 
-To run more than one experiment in parallel you can use [GNU parallel](http://www.gnu.org/s/parallel})
+To run more than one experiment in parallel you can use [GNU parallel](https://www.gnu.org/software/parallel/)
 
 ```sh
 parallel python experimenter.py ::: descriptor_1.json descriptor_2.json
