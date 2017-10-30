@@ -4,16 +4,16 @@
 
 This is an open source C++ implementation based on the technique presented in the following [paper](https://doi.org/10.1007/978-3-319-46475-6_47):
 
-Zhou QY., Park J., Koltun V. *Fast Global Registration*. Computer Vision – ECCV 2016
+> Zhou QY., Park J., Koltun V. *Fast Global Registration*. Computer Vision – ECCV 2016
 
 ## Objective
-Consider two point sets P and Q. Our task is to find a rigid transformation T that aligns Q to P. The algorithm optimizes a robust objective on correspondences K between P and Q. These correspondences are established by rapid feature matching (FPFH) that is performed before the objective is optimized. The correspondences are not recomputed during the optimization. The objective has the following form:
+Consider two point sets P and Q. Our task is to find a **rigid transformation T** that aligns Q to P. The algorithm optimizes a robust objective on correspondences K between P and Q. These correspondences are established by rapid feature matching (**FPFH**) that is performed before the objective is optimized. The correspondences are not recomputed during the optimization. The objective has the following form:
 
 <p align="center">
 <img src="http://latex.codecogs.com/svg.latex?E%28%5Cbm%7BT%7D%29%3D%5Csum_%7B%28p%2Cq%29%5Cin%5Cmathcal%7BK%7D%7D%5Crho%28%7B%5Cnorm%7Bq-%5Cbm%7BT%7Dp%7D%7D%29">
 </p>
 
-where (p,q) in K are the correspondent points in P and Q. The _robust penalty function_, si the _scaled Geman-McClure estimator_.
+where (p,q) in K are the correspondent points in P and Q. The **robust penalty function**, si the _scaled Geman-McClure estimator_.
 
 <p align="center">
 <img src="http://latex.codecogs.com/svg.latex?%5Crho%28x%29%3D%5Cfrac%7B%5Cmu%20x%5E2%7D%7B%5Cmu%2Bx%5E2%7D">
@@ -37,7 +37,7 @@ FastGlobalRegistration is compiled using CMake.
 
 To add the debug symbols (with no code optimization) add the flag run `cmake -DCMAKE_BUILD_TYPE=Debug ..`.
 
-Tested and MacOS 10.12.
+Tested and MacOS 10.12 and Ubuntu 16.04.
 
 
 ## Usage
@@ -80,7 +80,7 @@ Algorithm parameters:
 
 If the `abs-scale` flag is not enabled, all the distances of the model (e.g., search radii and correspondence distance) are measured relatively to the diameter of the point cloud. This is the default behavior with synthetic data. For real-world data, where the absolute scale is known a priori, these parameters can be set accordingly.
 
-The options `stop-rmse` and `max-corr-dist` determine when the optimization will stop. The first one is specifies the desired RMSE, the latter specifies a stoppng criteria on the graduated non-convexity parameter. In general, it should be set close to the threshold used to determine if a point pair is a match in global space. If you don't know how to set it, start with the default value **0.025**. Decreasing this parameter sometimes results in tighter alignment.
+The options `stop-rmse` and `max-corr-dist` determine when the optimization will stop. The first one is specifies the desired RMSE, the latter specifies a stoppng criteria on the graduated non-convexity parameter. In general, it should be set close to the threshold used to determine if a point pair is a match in global space. If you don't know how to set it, start with the default value _0.025_. Decreasing this parameter sometimes results in tighter alignment.
 
 The option `tuple-max-count` trades off between speed and accuracy. Increasing it will make the optimization slower, but the result can be more accurate.
 

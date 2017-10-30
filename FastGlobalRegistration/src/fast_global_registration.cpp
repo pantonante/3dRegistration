@@ -41,7 +41,7 @@ FastGlobalRegistration::FastGlobalRegistration(pcl::PointCloud<pcl::PointXYZ>::P
 
 	/* Normalization */
 	timer_.tic();	
-	NormalizePoints(); // don't skip this passage before computing FPFH!
+	NormalizePoints(); // don't skip this passage before computing FPFH! It compute the GlobalScale required to set correctly the search radius
 	timer_.toc("Normalization");
 
 	/* Features */
@@ -123,7 +123,7 @@ void FastGlobalRegistration::SearchFLANNTree(flann::Index<flann::L2<float>>* ind
 	flann::Matrix<int> indices_mat(&indices[0], rows_t, nn);
 	flann::Matrix<float> dists_mat(&dists[0], rows_t, nn);
 
-	index->knnSearch(query_mat, indices_mat, dists_mat, nn, flann::SearchParams(128));
+	index->knnSearch(query_mat, indices_mat, dists_mat, nn, flann::SearchParams(FLANN_SEARCH_CHECK));
 }
 
 void FastGlobalRegistration::AdvancedMatching()
@@ -163,7 +163,7 @@ void FastGlobalRegistration::AdvancedMatching()
 		for (int j = 0; j < dim; j++)
 			dataset_fi[i * dim + j] = features_[fi][i][j];
 
-	flann::Index<flann::L2<float>> feature_tree_i(dataset_mat_fi, flann::KDTreeSingleIndexParams(15));
+	flann::Index<flann::L2<float>> feature_tree_i(dataset_mat_fi, flann::KDTreeSingleIndexParams(FLANN_LEAF_MAX_SIZE));
 	feature_tree_i.buildIndex();
 
 	// build FLANNTree - fj
@@ -177,7 +177,7 @@ void FastGlobalRegistration::AdvancedMatching()
 		for (int j = 0; j < dim; j++)
 			dataset_fj[i * dim + j] = features_[fj][i][j];
 
-	flann::Index<flann::L2<float>> feature_tree_j(dataset_mat_fj, flann::KDTreeSingleIndexParams(15));
+	flann::Index<flann::L2<float>> feature_tree_j(dataset_mat_fj, flann::KDTreeSingleIndexParams(FLANN_LEAF_MAX_SIZE));
 	feature_tree_j.buildIndex();
 
 	bool crosscheck = true;

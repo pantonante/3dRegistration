@@ -202,7 +202,9 @@ def main():
 	doc.render(out_filename, file_type)
 	toc = time.time()
 	print('## Finish.')
+
 	print('Experiment completed in ' + str(round(toc-tic,2)) + ' seconds')
+	print('Report generated: ' + out_filename)
 
 ##################### MAIN SENTINEL #####################
 

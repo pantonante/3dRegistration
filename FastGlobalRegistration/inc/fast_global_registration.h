@@ -1,13 +1,6 @@
 #ifndef FGRALG_H
 #define FGRALG_H
 
-/* --------------------------------------- */
-
-#define USE_OMP 	//enables OpenMP
-#define MIN_NUM_OF_CORR 5
-
-/* --------------------------------------- */
-
 #include <vector>
 #include <numeric>
 #include <pcl/point_cloud.h>

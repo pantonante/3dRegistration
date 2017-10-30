@@ -27,7 +27,7 @@ The script can be executed in parallel with itself, for example using more termi
 
 **Summarizing**:
 
-- **run automatically** hundreds of registration experiments described in a JSON file
+- **run automatically** hundreds of registration experiments compactly described in a JSON file
 - computes **rotation error** and **translation error** for each registration experiment
 - generates **LaTeX** or **HTML reports** with graphs (including boxplot for execution time)
 - can be executed in parallel
@@ -62,6 +62,7 @@ A simple example of a descriptor is the following:
     "additional_flags": "-c",
     "report_flag":"-j",
     "output": "report.html",
+    "dataset_variable": "Noise",
     "dataset": [
         {
             "sigma": "0.000000",
@@ -102,6 +103,7 @@ All fields are **mandatory** except from `output` that can be expressed from the
 - `additional_flags`: set some flags common to every experiment (e.g., select the closed form solution)
 - `report_flag`: the flag needed to specify the json output from the algorithm
 - `output`: path to the output report (the extension selects the format)
+- `dataset_variable`: this represent the x-asis in the graphs
 - `dataset`: an array of object, each containing
     - the x-axis value for the pair (this value will represent the x-axis on the output graphs)
     - the point clouds pair (P, Q)
@@ -118,6 +120,12 @@ To run the experiment, just run:
 
 ```sh
 python experimenter.py descriptor_file.json
+```
+
+To run more than one experiment in parallel you can use [GNU parallel](http://www.gnu.org/s/parallel})
+
+```sh
+parallel python experimenter.py ::: descriptor_1.json descriptor_2.json
 ```
 
 ## License

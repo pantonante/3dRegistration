@@ -14,9 +14,9 @@ addpath('./lib')
 
 rng shuffle
 
-plyFile = 'data/bunny/reconstruction/bun_zipper_res3.ply';
-output_folder = '../dataset/bunny_noise';
-output_basename = 'bunny';
+plyFile = 'apt12k.pcd';
+output_folder = 'dataset/apt6k_noise';
+output_basename = 'apt';
 
 variable = 'noise'; % possible values {'noise', 'outliers'}
 % Note: outliers is expressed as percentage [0,1]
@@ -25,8 +25,8 @@ values = 0:0.005:0.1; % noise
 
 % Random transformation parameters
 max_rot = [ 2*pi, 2*pi, 2*pi ];
-min_t = [ 0.16 0.16 0.16 ]; % ensure no overlap
-max_t = [ 20, 20, 20];
+min_t = 'auto'; % a vector 3x1 or 'auto'
+max_t = [ 20, 20, 20]; % if min_t is 'auto' this are multipliers
 
 % Downsampling for point cloud P
 donwsampling_ratio = 0; % if 0 does not downsample, see downsampling_method
@@ -48,6 +48,14 @@ fileID = fopen(fullfile(pwd,output_folder,'descriptor.json'),'w');
 ptCloud_Q = pcread(plyFile);
 disp(['Point Cloud `', plyFile, '` successfully loaded.'])
 disp(['Number of points: ', num2str(ptCloud_Q.Count)])
+
+if ischar(min_t) && strcmpi(min_t,'auto')
+    min_t = [ % ensure no overlap
+    abs(ptCloud_Q.XLimits(1)-ptCloud_Q.XLimits(2)) ...
+    abs(ptCloud_Q.YLimits(1)-ptCloud_Q.YLimits(2))...
+    abs(ptCloud_Q.ZLimits(1)-ptCloud_Q.ZLimits(2))];
+    max_t=max_t.*min_t;
+end
 
 textprogressbar('Generating dataset: ');
 fprintf(fileID,'{\n'); 
@@ -76,8 +84,10 @@ for i=1:length(values)
     ptCloudP_filename = fullfile(pwd,output_folder, curr_dir,'ptCloud_P.pcd');
     ptCloudQ_filename = fullfile(pwd,output_folder, curr_dir,'ptCloud_Q.pcd');
     trans_filename = fullfile(pwd,output_folder, curr_dir,'trans.txt');
-    pcwrite(ptCloud_Q,ptCloudQ_filename,'Encoding','binary');
-    pcwrite(ptCloud_P,ptCloudP_filename,'Encoding','binary');
+    %pcwrite(ptCloud_Q,ptCloudQ_filename,'Encoding','binary');
+    %pcwrite(ptCloud_P,ptCloudP_filename,'Encoding','binary');
+    savepcd(ptCloudQ_filename,ptCloud_Q.Location','binary');
+    savepcd(ptCloudP_filename,ptCloud_P.Location','binary');
     SaveTransformationMatrix(T,trans_filename);
     
     % Json descriptor

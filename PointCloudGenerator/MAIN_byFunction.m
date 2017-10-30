@@ -25,6 +25,6 @@ ptCloud_Q = PCbyFunc(f,x_space,y_space);
 [ptCloud_P,T] = randomlyTransformPtCloud(ptCloud_Q,sigma,beta);
 
 %% Save
-pcwrite(ptCloud_Q,'ptCloud_Q.pcd','Encoding','ascii');
-pcwrite(ptCloud_P,'ptCloud_P.pcd','Encoding','ascii');
+savepcd('ptCloud_Q.pcd',ptCloud_Q.Location','binary');
+savepcd('ptCloud_P.pcd',ptCloud_P.Location','binary');
 SaveTransformationMatrix(T,'trans.mat');
