@@ -1,5 +1,10 @@
+.metadata
+
 # MacOS
 .DS_Store
 
 # Build directory
 build*/
+
+# CDT-specific (C/C++ Development Tooling)
+.cproject

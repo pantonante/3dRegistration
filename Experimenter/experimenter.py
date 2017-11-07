@@ -31,15 +31,20 @@ class Experimenter:
 		self.pbar = tqdm(total=self.count_experiments(descriptor), unit="experiment")
 
 	def count_experiments(self,desc):
-		count = 0
+		parameters = 0
+		datasets = 0
 		for par in desc['parameters']:
 			for val in par['values']:
-				count = count + 1
-		count = count * len(desc['dataset'])
-		return count
+				parameters = parameters + 1
+		for dataset in desc['dataset']:
+			if len(dataset["P"])==len(dataset["Q"]) and len(dataset["P"])==len(dataset["T"]):
+				datasets = datasets + len(dataset["P"])
+			else:
+				raise ValueError('Dataset size does\'t match.')
+		return parameters*datasets
 
-	def dataset_args(self, dataset):
-		return  " -p " + dataset["P"] + " -q " + dataset["Q"]
+	def dataset_args(self, P, Q):
+		return  " -p " + P + " -q " + Q
 
 	def add_arg(self, par, val):
 		return " " + par + " " + val
@@ -71,40 +76,53 @@ class Experimenter:
 			plot_tra=Plot(par["name"]+", translation error")
 			plot_tra.set_axis_label(desc['dataset_variable'], 'Error')
 			for val in par["values"]: # for each value listed for that parameter 
-				sigmas = []
+				values = []
 				y_rot = []
 				y_tra = []
 				for dataset in desc["dataset"]: # for each dataset (X-axis)
-					sigmas.append(float(dataset['sigma']))
-					cmd = self.base_cmd(desc) + self.dataset_args(dataset) # create the command to run the alg. on the current dataset
-					cmd = cmd + self.add_arg(par["flag"], val) # add the current parameter with its tested value
-					other_params = ( xpar for xpar in desc["parameters"] if par["flag"]!=xpar["flag"] )
-					for xpar in other_params:
-						cmd = cmd + self.add_arg(xpar["flag"], xpar["nominal"])
-					cmd = cmd + " " + desc["report_flag"] + " " + self.REPORT_FILENAME # set up the report
-					self.run_cmd(cmd) # execute the algorithm
+					values.append(float(dataset['value']))
+					rot_err_avg = []
+					tra_err_avg = []
+					for ptCloudIdx in range(0, len(dataset["P"])):
+						ptCloud_P = dataset["P"][ptCloudIdx]
+						ptCloud_Q = dataset["Q"][ptCloudIdx]
+						T_file = dataset["T"][ptCloudIdx]
+						cmd = self.base_cmd(desc) + self.dataset_args(ptCloud_P, ptCloud_Q) # create the command to run the alg. on the current dataset
+						cmd = cmd + self.add_arg(par["flag"], val) # add the current parameter with its tested value
+						other_params = ( xpar for xpar in desc["parameters"] if par["flag"]!=xpar["flag"] )
+						for xpar in other_params:
+							cmd = cmd + self.add_arg(xpar["flag"], xpar["nominal"])
+						cmd = cmd + " " + desc["report_flag"] + " " + self.REPORT_FILENAME # set up the report
+						self.run_cmd(cmd) # execute the algorithm
 
-					# Read and analyze output
-					try:
-						report = self.parse_report(self.REPORT_FILENAME)
-					except IOError:
-						print('"'+cmd+'" did not produce any result')
-						exit()
+						# Read and analyze output
+						try:
+							report = self.parse_report(self.REPORT_FILENAME)
+						except IOError:
+							print('"'+cmd+'" did not produce any result')
+							exit()
 
-					if report['completed'] is True:
-						# MSE
-						[rot_err, tra_err] = self.rot_and_trans_error(report, dataset["T"])
-						y_rot.append(rot_err)
-						y_tra.append(tra_err)
-						# Timing
-						for ti in report['timing']:
-							if ti['tag'] in timings:
-								timings[ti['tag']].append(float(ti['time']))
-							else:
-								timings[ti['tag']]=[float(ti['time'])]
+						if report['completed'] is True:
+							T_gnd = self.read_ground_truth(T_file)
+							T_est = np.matrix(report['transformation'])
+							# MSE
+							[rot_err, tra_err] = self.rot_and_trans_error(T_est, T_gnd)
+							if np.isnan(rot_err) or np.isnan(tra_err):
+								raise FloatingPointError('Errors cannot be NaN')
+							rot_err_avg.append(rot_err)
+							tra_err_avg.append(tra_err)
+							# Timing
+							for ti in report['timing']:
+								if ti['tag'] in timings:
+									timings[ti['tag']].append(float(ti['time']))
+								else:
+									timings[ti['tag']]=[float(ti['time'])]
+
+					y_rot.append(np.average(rot_err_avg))
+					y_tra.append(np.average(tra_err_avg))
 				# ... new dataset
-				plot_rot.add_datapoints(str(val), sigmas, y_rot)
-				plot_tra.add_datapoints(str(val), sigmas, y_tra)
+				plot_rot.add_datapoints(str(val), values, y_rot)
+				plot_tra.add_datapoints(str(val), values, y_tra)
 			# .. new value
 			doc.add_plot(plot_rot)
 			doc.add_plot(plot_tra)
@@ -119,20 +137,17 @@ class Experimenter:
 
 	def parse_report(self, filename):
 		with open(filename) as data_file:    
-		    res = json.load(data_file)
+			res = json.load(data_file)
 		return res
 
-	def rot_and_trans_error(self, report, ground_truth_filename):
-		T_ground = self.read_ground_truth(ground_truth_filename)
-		T_gnd = np.matrix(T_ground)
+	def rot_and_trans_error(self, T_est, T_gnd):
 		R_gnd = T_gnd[0:3,0:3]
 		t_gnd = T_gnd[0:3,3]
-		T = np.matrix(report['transformation'])
-		R = T[0:3,0:3]
-		t = T[0:3,3]
-		[x,y,z] = self.mat2euler(R_gnd.dot(R.transpose()))
+		R_est = T_est[0:3,0:3]
+		t_est = T_est[0:3,3]
+		[x,y,z] = self.mat2euler(R_gnd.dot(R_est.transpose()))
 		y_rot = np.linalg.norm([x,y,z])
-		y_tra = np.linalg.norm(t-t_gnd)
+		y_tra = np.linalg.norm(t_est-t_gnd)
 		return [y_rot,y_tra]
 		
 	def remove_file(self, filename):
@@ -142,30 +157,29 @@ class Experimenter:
 			pass
 
 	def read_ground_truth(self, filename):
-		T = np.loadtxt(filename, delimiter=' ')
+		T_raw = np.loadtxt(filename, delimiter=' ')
+		T = np.matrix(T_raw)
 		return T
 
 	def mat2euler(self, R):
 		sy = math.sqrt(R[0,0] * R[0,0] +  R[1,0] * R[1,0])
 		singular = sy < 1e-6
 		if not singular:
-		  x = math.atan2(R[2,1] , R[2,2])
-		  y = math.atan2(-R[2,0], sy)
-		  z = math.atan2(R[1,0], R[0,0])
+			x = math.atan2(R[2,1] , R[2,2])
+			y = math.atan2(-R[2,0], sy)
+			z = math.atan2(R[1,0], R[0,0])
 		else:
-		  x = math.atan2(-R[1,2], R[1,1])
-		  y = math.atan2(-R[2,0], sy)
-		  z = 0
+			x = math.atan2(-R[1,2], R[1,1])
+			y = math.atan2(-R[2,0], sy)
+			z = 0
 
 		return np.array([x, y, z])
-
-
 
 #############################################################################
 
 def load_descriptor_file(filename):
 	with open(filename) as data_file:    
-	    desc = json.load(data_file)
+		desc = json.load(data_file)
 	return desc
 
 def main():

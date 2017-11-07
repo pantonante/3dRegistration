@@ -4,7 +4,7 @@
 % the dataset.
 % Author: Pasquale Antonante
 % Date: 
-% MIT Copyright (c) Pasquale Antonante, Luca Carlone
+% MIT Copyright (c) Pasquale Antonante, Luca Carlone (MIT)
 
 clear all
 close all
@@ -14,19 +14,22 @@ addpath('./lib')
 
 rng shuffle
 
-plyFile = 'apt12k.pcd';
-output_folder = 'dataset/apt6k_noise';
-output_basename = 'apt';
+plyFile = 'data/bunny/reconstruction/bun_zipper_res3.ply';
+output_folder = 'bunny_outliers';
+output_basename = 'bunny';
 
-variable = 'noise'; % possible values {'noise', 'outliers'}
+dataset_multiplier = 20; % how many times the same noise level (or outlier
+    % percentage) should be used?
+
+variable = 'outliers'; % possible values {'noise', 'outliers', ''}
 % Note: outliers is expressed as percentage [0,1]
-values = 0:0.005:0.1; % noise
-%values = 0:0.03:0.7; %outliers
+%values = 0:0.005:0.1; % noise
+values = 0:0.02:0.4; %outliers
 
 % Random transformation parameters
 max_rot = [ 2*pi, 2*pi, 2*pi ];
 min_t = 'auto'; % a vector 3x1 or 'auto'
-max_t = [ 20, 20, 20]; % if min_t is 'auto' this are multipliers
+max_t = [ 20, 20, 20]; % if min_t is 'auto' thes are multipliers (i.e. max_t.*min_t)
 
 % Downsampling for point cloud P
 donwsampling_ratio = 0; % if 0 does not downsample, see downsampling_method
@@ -34,76 +37,75 @@ downsampling_method = 'nonuniformGridSample'; % possible values ...
     %... {'nonuniformGridSample', 'gridAverage'}, see `doc pcdownsample`
 
 %% MAIN -- you should not need to edit from now on
-delta = 100/length(values); %percentage of the overall proces per pt.cloud
+delta = 100/(length(values)*dataset_multiplier); %percentage of the overall proces per pt.cloud
 
-dir=fullfile(pwd,output_folder); % path to the output folder
+dir=fullfile(pwd, output_folder); % path to the output folder
 if exist(dir, 'dir')
    rmdir(dir,'s') % remove it if exists
 end
 mkdir(dir) %create the output folder
 clear dir
 
-fileID = fopen(fullfile(pwd,output_folder,'descriptor.json'),'w');
+dd = DatasetDescriptor(variable);
 
 ptCloud_Q = pcread(plyFile);
 disp(['Point Cloud `', plyFile, '` successfully loaded.'])
 disp(['Number of points: ', num2str(ptCloud_Q.Count)])
+ptCloudQ_filename = fullfile(pwd, output_folder, ...
+    'ptCloud_Q.pcd');
+savepcd(ptCloudQ_filename, ptCloud_Q.Location', 'binary'); %this pt.cloud never changes
 
-if ischar(min_t) && strcmpi(min_t,'auto')
+% Downsample (once for all)
+if(donwsampling_ratio>0)
+    ptCloud_P = pcdownsample(ptCloud_Q,downsampling_method,donwsampling_ratio);
+    disp(['Number of points after downsampling: ', num2str(ptCloud_P.Count)])
+else
+    ptCloud_P = copy(ptCloud_Q);
+end
+
+% Minimum translation is required, if 'auto' eanbled, it need to be computed
+if ischar(min_t) && strcmpi(min_t, 'auto')
     min_t = [ % ensure no overlap
     abs(ptCloud_Q.XLimits(1)-ptCloud_Q.XLimits(2)) ...
     abs(ptCloud_Q.YLimits(1)-ptCloud_Q.YLimits(2))...
     abs(ptCloud_Q.ZLimits(1)-ptCloud_Q.ZLimits(2))];
-    max_t=max_t.*min_t;
+    max_t = max_t.*min_t;
 end
 
 textprogressbar('Generating dataset: ');
-fprintf(fileID,'{\n'); 
-fprintf(fileID,'\t"dataset": [\n'); 
 for i=1:length(values)
     s = values(i);
-    % Downsample
-    if(donwsampling_ratio>0)
-        ptCloud_P = pcdownsample(ptCloud_Q,downsampling_method,donwsampling_ratio);
-    else
-        ptCloud_P = copy(ptCloud_Q);
-    end
-    % Apply Random Transformation
-    [ptCloud_P, T] = ApplyRandomTransformation(ptCloud_P, ...
-        max_rot, min_t, max_t);
-    if (strcmpi(variable,'noise'))
-        % Add Noise
-        ptCloud_P = AddNoise(ptCloud_P, s);
-    elseif (strcmpi(variable,'outliers'))
-        % Add Outliers
-        ptCloud_P = AddOutliers(ptCloud_P, s);
-    end
-    % Saving
     curr_dir = strrep(char([output_basename,num2str(s)]),'.','');
-    mkdir(fullfile(pwd,output_folder,curr_dir))
-    ptCloudP_filename = fullfile(pwd,output_folder, curr_dir,'ptCloud_P.pcd');
-    ptCloudQ_filename = fullfile(pwd,output_folder, curr_dir,'ptCloud_Q.pcd');
-    trans_filename = fullfile(pwd,output_folder, curr_dir,'trans.txt');
-    %pcwrite(ptCloud_Q,ptCloudQ_filename,'Encoding','binary');
-    %pcwrite(ptCloud_P,ptCloudP_filename,'Encoding','binary');
-    savepcd(ptCloudQ_filename,ptCloud_Q.Location','binary');
-    savepcd(ptCloudP_filename,ptCloud_P.Location','binary');
-    SaveTransformationMatrix(T,trans_filename);
-    
-    % Json descriptor
-    fprintf(fileID,'\t\t{\n');
-	fprintf(fileID,'\t\t\t"sigma": "%f",\n',s);
-    fprintf(fileID,'\t\t\t"P": "%s",\n',ptCloudP_filename);
-    fprintf(fileID,'\t\t\t"Q": "%s",\n',ptCloudQ_filename);
-    fprintf(fileID,'\t\t\t"T": "%s"\n',trans_filename);
-    if i<length(values)
-        delimiter = ',';
-    else
-        delimiter = '';
+    mkdir(fullfile(pwd, output_folder, curr_dir))
+    for j=1:dataset_multiplier
+        % Apply Random Transformation
+        [ptCloud_TP, T] = ApplyRandomTransformation(ptCloud_P, ...
+            max_rot, min_t, max_t);
+        if (strcmpi(variable,'noise'))
+            % Add Noise
+            ptCloud_TP = AddNoise(ptCloud_TP, s);
+        elseif (strcmpi(variable,'outliers'))
+            % Add Outliers
+            ptCloud_TP = AddOutliers(ptCloud_TP, s);
+        end
+        % Saving        
+        ptCloudP_filename = fullfile(pwd, output_folder, curr_dir, ...
+            sprintf('ptCloud_P%d.pcd', j));        
+        savepcd(ptCloudP_filename,ptCloud_TP.Location','binary')
+        trans_filename = fullfile(pwd, output_folder, curr_dir, ...
+            sprintf('T%d.txt', j));
+        SaveTransformationMatrix(T,trans_filename);
+        % Updating DatasetDescriptor
+        dd = dd.add_PointClouds(s, ptCloudP_filename,...
+            ptCloudQ_filename, trans_filename);
+        % Updatinf Progress Bar
+        textprogressbar(((i-1)*dataset_multiplier+j)*delta);
     end
-    fprintf(fileID,'\t\t}%s\n',delimiter); 
-    
-    textprogressbar(i*delta);
 end
-fprintf(fileID,'\t]\n}\n'); 
 textprogressbar(' done');
+
+%% Saving Descriptor file
+dd.to_JSON(fullfile(pwd, output_folder, 'descriptor.json'))
+
+%% Clean up
+clear
