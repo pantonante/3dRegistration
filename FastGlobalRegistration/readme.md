@@ -58,23 +58,45 @@ Required arguments:
   -p [ --pointcloudP ] arg              Point cloud filename [*.pcd].
   -q [ --pointcloudQ ] arg              Point cloud filename [*.pcd].
 
+
 Miscellaneous:
-  -h [ --help ]                         Print help messages
+  -h [ --help ]                         Print help messages.
+  
   -v [ --verbose ]                      Verbose output.
-  -o [ --output ] arg                   Output filename, save the transformation matrix.
+  
+  -o [ --output ] arg                   Output filename, save the
+                                        transformation matrix.
+                                        
   -r [ --report ] arg                   Save an HTML report.
+  
   -j [ --json ] arg                     Save the report as JSON file.
 
 Algorithm parameters:
-  -a [ --abs-scale ]                    If enabled, measure distance in absolute scale, otherwise in scale relative to the diameter of the model.
-  -c [ --closed-form ]                  Use closed form solution for transformation estimation.
-  --div-factor arg (=1.4)               Division factor used for graduated non-convexity.
-  --stop-rmse arg (=0.01)               Optimization stops when reach the given RMSE.
-  --max-corr-dist arg (=0.025)          Maximum correspondence distance (also see abs-scale).
+  -a [ --abs-scale ]                    If enabled, measure distance in
+                                        absolute scale, otherwise in scale
+                                        relative to the diameter of the model.
+
+  -c [ --closed-form ]                  Use closed form solution for
+                                        transformation estimation.
+
+  --div-factor arg (=1.4)               Division factor used for graduated
+                                        non-convexity.
+
+  --stop-rmse arg (=0.01)               Optimization stops when reach the given
+                                        RMSE.
+
+  --max-corr-dist arg (=0.025)          Maximum correspondence distance (also
+                                        see abs-scale).
+
   -n [ --iterations ] arg (=64)         Maximum number of iteration.
-  --tuple-scale arg (=0.95)             Similarity measure used for tuples of feature points.
-  -m [ --tuple-max-count ] arg (=1000)  Maximum tuple numbers.
+
+  --tuple-scale arg (=0.95)             Similarity measure used for tuples of
+                                        feature points.
+
+  -m [ --tuple-max-count ] arg (=100)   Maximum tuple numbers.
+
   --normals-search-radius arg (=0.03)   Normals estimation search radius.
+
   --fpfh-search-radius arg (=0.2)       FPFH estimation search radius.
 ```
 

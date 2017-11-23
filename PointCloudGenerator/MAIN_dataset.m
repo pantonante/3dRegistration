@@ -2,7 +2,7 @@
 % a dataset of point clouds applying random transformation, and 
 % possibly adding noise or outliers. Generate also the descriptor of
 % the dataset.
-% Author: Pasquale Antonante
+% Author: Pasquale Antonante, Luca Carlone (MIT)
 % Date: 
 % MIT Copyright (c) Pasquale Antonante, Luca Carlone (MIT)
 
@@ -14,22 +14,25 @@ addpath('./lib')
 
 rng shuffle
 
-plyFile = 'data/bunny/reconstruction/bun_zipper_res3.ply';
-output_folder = 'bunny_outliers';
-output_basename = 'bunny';
+%% Configuration
 
+plyFile = 'data/bunny/reconstruction/bun_zipper_res3.ply'; %input dataset
+output_folder = 'bunny_noise'; % the output folder
+output_basename = 'bunny'; %the basename of the folder containing
+	% the point clouds associated with the current `value`level
+    
 dataset_multiplier = 20; % how many times the same noise level (or outlier
     % percentage) should be used?
 
-variable = 'outliers'; % possible values {'noise', 'outliers', ''}
+variable = 'noise'; % possible values {'noise', 'outliers', ''}
 % Note: outliers is expressed as percentage [0,1]
-%values = 0:0.005:0.1; % noise
-values = 0:0.02:0.4; %outliers
+values = 0:0.0005:0.005; % noise
+%values = 0:0.025:0.5; %outliers
 
 % Random transformation parameters
 max_rot = [ 2*pi, 2*pi, 2*pi ];
 min_t = 'auto'; % a vector 3x1 or 'auto'
-max_t = [ 20, 20, 20]; % if min_t is 'auto' thes are multipliers (i.e. max_t.*min_t)
+max_t = [ 5, 5, 5]; % if min_t is 'auto' thes are multipliers (i.e. max_t.*min_t)
 
 % Downsampling for point cloud P
 donwsampling_ratio = 0; % if 0 does not downsample, see downsampling_method
@@ -46,8 +49,7 @@ end
 mkdir(dir) %create the output folder
 clear dir
 
-dd = DatasetDescriptor(variable);
-
+% Load the dataset
 ptCloud_Q = pcread(plyFile);
 disp(['Point Cloud `', plyFile, '` successfully loaded.'])
 disp(['Number of points: ', num2str(ptCloud_Q.Count)])
@@ -55,10 +57,15 @@ ptCloudQ_filename = fullfile(pwd, output_folder, ...
     'ptCloud_Q.pcd');
 savepcd(ptCloudQ_filename, ptCloud_Q.Location', 'binary'); %this pt.cloud never changes
 
+% Initialize the dataset descriptor
+dd = DatasetDescriptor(variable, getDiameter(ptCloud_Q));
+
 % Downsample (once for all)
 if(donwsampling_ratio>0)
-    ptCloud_P = pcdownsample(ptCloud_Q,downsampling_method,donwsampling_ratio);
-    disp(['Number of points after downsampling: ', num2str(ptCloud_P.Count)])
+    ptCloud_P = pcdownsample(ptCloud_Q, ...
+        downsampling_method, donwsampling_ratio);
+    disp(['Number of points after downsampling: ', ...
+        num2str(ptCloud_P.Count)])
 else
     ptCloud_P = copy(ptCloud_Q);
 end

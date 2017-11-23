@@ -7,18 +7,14 @@ function ptCloud_noisy = AddNoise( ptCloud, sigma, normalize_to_ptCloud )
 %       yes, 2 false) - yes by default
 
 if nargin<3
-    normalize_to_ptCloud=1;
+    normalize_to_ptCloud = 1;
 end
 
 N = ptCloud.Count;  
 
 %% if necessary give a more suitable scale to sigma
 if(normalize_to_ptCloud)
-    diameters = [
-        abs(ptCloud.XLimits(1)-ptCloud.XLimits(2)) ...
-        abs(ptCloud.YLimits(1)-ptCloud.YLimits(2))...
-        abs(ptCloud.ZLimits(1)-ptCloud.ZLimits(2))];
-    scale = max(diameters);
+    scale = getDiameter(ptCloud);
 else
     scale=1; 
 end

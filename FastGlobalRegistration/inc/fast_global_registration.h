@@ -14,6 +14,7 @@
 #include <Eigen/Geometry>
 #include "CPUTimer.h"
 #include "default_config.h"
+#include "fgr_options.h"
 
 using namespace Eigen;
 using namespace std;
@@ -37,7 +38,7 @@ public:
 
 	vector<float> fitness; 									// MSE over iterations
 
-	FastGlobalRegistration(pcl::PointCloud<pcl::PointXYZ>::Ptr ptCloud_P, pcl::PointCloud<pcl::PointXYZ>::Ptr ptCloud_Q, bool verbose=false);
+	FastGlobalRegistration(pcl::PointCloud<pcl::PointXYZ>::Ptr ptCloud_P, pcl::PointCloud<pcl::PointXYZ>::Ptr ptCloud_Q, FGROptions options);
 	Eigen::Matrix4f performRegistration();
 	Eigen::Matrix4f GetTrans();
 

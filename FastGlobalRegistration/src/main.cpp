@@ -63,17 +63,8 @@ int main(int argc, char** argv)
 		cout<<endl<<"Warning: verbose execution enabled, timing information might be wrong."<<endl<<endl;
 
 	// Instantiate Global Registration engine
-	FastGlobalRegistration fgr(ptCloud_P, ptCloud_Q, options.verbose);
-	fgr.closed_form				= options.closed_form;
-	fgr.use_absolute_scale 		= options.use_absolute_scale;		// Measure distance in absolute scale (1) or in scale relative to the diameter of the model (0)
-	fgr.div_factor 				= options.div_factor; 				// Division factor used for graduated non-convexity
-	fgr.max_corr_dist 			= options.max_corr_dist;			// Maximum correspondence distance (also see comment of USE_ABSOLUTE_SCALE)
-	fgr.iteration_number 		= options.iteration_number;			// Maximum number of iteration
-	fgr.tuple_scale 			= options.tuple_scale;				// Similarity measure used for tuples of feature points.
-	fgr.tuple_max_count 		= options.tuple_max_count;			// Maximum tuple numbers.
-	fgr.stop_mse				= options.stop_mse;					// Stop criteria
-	fgr.normals_search_radius 	= options.normals_search_radius;	// Normals estimation search radius
-	fgr.fpfh_search_radius 		= options.fpfh_search_radius;		// FPFH estimation search radius
+	FastGlobalRegistration fgr(ptCloud_P, ptCloud_Q, options);
+	
 
 	// Perform Fast Global Registration and display results
 	Eigen::Matrix4f T = fgr.performRegistration();

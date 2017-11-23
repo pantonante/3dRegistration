@@ -1,16 +1,18 @@
 # Experimenter
 
 ## Overview
-A python script that allows you to run parameters experiments of 3D registration algorithm automatically. Just describe it in a JSON file.
+A python script that allows you to run parameters experiments of 3D registration algorithm automatically. Just describe them in a JSON file.
 
 ## Features
 
-Run the experiments on hundreds of different combination of parameters and point clouds, compute the relative _rotation error_ and _translation error_ is extremely boring. The idea behind a registration experiment is always the same: 
+Running experiments on hundreds of different combination of parameters and point clouds, compute the relative _rotation error_ and _translation error_ is extremely boring. The idea behind a registration experiment is always the same:
+ 
 1. take a set of point cloud pairs
 2. run the registration algorithm on a set of possible parameters combination 
-3. compute errors
+3. compute errors against ground truth
 4. plot graphs
-Usually the datasets represent a set of increasing value on _noise_ or _outliers_. This process can be easily automized.
+
+Usually, the datasets represent a set of increasing value on _noise_ or _outliers_. This process can be easily automized.
 
 The sets of point clouds and of parameters are described in the JSON file, which represents the experiment descriptor. For further information look at the experiment descriptor format below.
 
@@ -21,7 +23,7 @@ After the experiment the script generates a **LaTeX** or **HTML** report file wi
 </p>
 
 
-For a complex experiment, I suggested to use the HTML report because it is interactive (thanks to Plotly.js).
+For a complex experiment, I suggested using the HTML report because it is interactive (thanks to [Plotly.js](https://plot.ly/javascript/)).
 
 The script can be executed in parallel with itself, for example using more terminals or a custom script.
 
@@ -47,13 +49,9 @@ then run
 source activate 3dRegistration
 ```
 
-## Usage
+## Experiment descriptor
 
-Before running an experiment, you need to create the JSON descriptor file.
-
-### Experiment descriptor
-
-A simple example of a descriptor is the following:
+Before running an experiment, you need to create the JSON descriptor file. A simple example of a descriptor is the following:
  
 ```json
 {
@@ -62,19 +60,20 @@ A simple example of a descriptor is the following:
     "additional_flags": "-c",
     "report_flag":"-j",
     "output": "report.html",
+    "ptCloud_diameter": "0.276120",
     "dataset_variable": "Noise",
     "dataset": [
         {
-            "sigma": "0.000000",
-            "P": "../dataset/bunny_noise/bunny_noise0/ptCloud_P.pcd",
-            "Q": "../dataset/bunny_noise/bunny_noise0/ptCloud_Q.pcd",
-            "T": "../dataset/bunny_noise/bunny_noise0/trans.txt"
+            "value": "0.0",
+            "P": ["../dataset/bunny_noise/bunny_noise0/ptCloud_P1.pcd","../dataset/bunny_noise/bunny_noise0/ptCloud_P2.pcd"],
+            "Q": ["../dataset/bunny_noise/bunny_noise0/ptCloud_Q1.pcd""../dataset/bunny_noise/bunny_noise0/ptCloud_Q2.pcd"],
+            "T": ["../dataset/bunny_noise/bunny_noise0/T1.txt","../dataset/bunny_noise/bunny_noise0/T2.txt"]"
         },
         {
-            "sigma": "0.005000",
-            "P": "../dataset/bunny_noise/bunny_noise0005/ptCloud_P.pcd",
-            "Q": "../dataset/bunny_noise/bunny_noise0005/ptCloud_Q.pcd",
-            "T": "../dataset/bunny_noise/bunny_noise0005/trans.txt"
+            "value": "0.005",
+            "P": ["../dataset/bunny_noise/bunny_noise0005/ptCloud_P1.pcd","../dataset/bunny_noise/bunny_noise0005/ptCloud_P2.pcd"],
+            "Q": ["../dataset/bunny_noise/bunny_noise0005/ptCloud_Q1.pcd""../dataset/bunny_noise/bunny_noise0005/ptCloud_Q2.pcd"],
+            "T": ["../dataset/bunny_noise/bunny_noise0005/T1.txt","../dataset/bunny_noise/bunny_noise0005/T2.txt"]"        
         }
     ],
     "parameters": [
@@ -94,27 +93,53 @@ A simple example of a descriptor is the following:
 }
 ```
 
-All fields are **mandatory** except from `output` that can be expressed from the command line. They are:
+All fields are **mandatory** except `output` that can be expressed from the command line. They are:
 
 - `name`: the name of the experiment
 - `exe`: the registration algorithm executable, it needs to provide some common interface
     - needs to take two point clouds by specifying `-p` and `-q`
-    - needs to generate a json report
+    - needs to generate a supported json report
 - `additional_flags`: set some flags common to every experiment (e.g., select the closed form solution)
 - `report_flag`: the flag needed to specify the json output from the algorithm
 - `output`: path to the output report (the extension selects the format)
-- `dataset_variable`: this represent the x-asis in the graphs
+- `dataset_variable`:  represents the x-axis in the graphs
+- `ptCloud_diameter`: the diameter of the reference point cloud (pt. Cloud Q); it is useful to compute the translation error as percentage of the diameter
 - `dataset`: an array of object, each containing
     - the x-axis value for the pair (this value will represent the x-axis on the output graphs)
-    - the point clouds pair (P, Q)
-    - the ground truth transformation matrix
+    - an array of point clouds P
+    - an array of point clouds Q
+    - the ground truth transformation matrix for each pair (P, Q)
 - `parameters`: an array of object, each representing a value you want to test
     - `name`: parameter name
     - `flag`: the flag needed to activate/specify this parameter
     - `nominal`: the value that should be used when all the other parameters are evaluated
-    - `values`: an array containing all the values you want to explore, if empty it will be considered only with respect to its nominal value (i.e. it will always be specified, but no graph will be generated for it)
+    - `values`: an array containing all the values you want to explore, if empty it will be considered only involving its nominal value (i.e. it will always be specified, but no graph will be generated for it)
 
-### Run the experiment
+Note that the array of point clouds P, Q and the relative T for each x-axis value are homogenous in size since they represent a correspondence.
+
+
+## Operational modes
+
+There are three operational modes, automatically selected on the data available in the experiment descriptor.
+
+### Simple experiment
+
+If you specify **only a point cloud pair** and **only nominal values for parameters**, you are running a simple experiment. In other words, the algorithm will be executed once on the pair and the output compared against the ground truth.
+
+In this case, the report will not be generated (the report is printed on the console).
+
+### Dataset experiment
+
+If you specify **more than one point cloud pair** and **only nominal values for parameter** than you are running a dataset experiment. The algorithm will be executed on all the datasets, eventually averaging on point clouds corresponding to the same value level (note that for each dataset, P, Q, and T are vectors). 
+
+### Parameters experiment
+
+If you specify **more than one point cloud pair** and **values for at least one parameter** than you are running a parameters experiment. The algorithm will be executed on all the datasets, eventually averaging on point clouds corresponding on the same value level (note that for each dataset, P, Q, and T are vectors) testing all the parameter combinations.
+
+The parameters combination are computed in the following way: for each parameter, the algorithm is executed using every possible value from the values array, setting all the other parameters with their nominal values.
+
+
+## Run the experiment
 
 To run the experiment, just run:
 
@@ -122,7 +147,7 @@ To run the experiment, just run:
 python experimenter.py descriptor_file.json
 ```
 
-To run more than one experiment in parallel you can use [GNU parallel](https://www.gnu.org/software/parallel/)
+To run more than one experiment in parallel, you can use [GNU parallel](https://www.gnu.org/software/parallel/)
 
 ```sh
 parallel python experimenter.py ::: descriptor_1.json descriptor_2.json

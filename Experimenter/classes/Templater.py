@@ -5,32 +5,31 @@ import os
 ##################################################
 
 class Plot(object):
+  def __init__(self, title):
+    self.plot = {
+      'type': 'lineplot',
+      'title': title ,
+      'x-axis': 'x-axis',
+      'y-axis': 'y-axis',
+      'data': []
+    }
 
-    def __init__(self, title):
-        self.plot = {
-        	'type': 'lineplot',
-          'title': title ,
-          'x-axis': 'x-axis',
-          'y-axis': 'y-axis',
-          'data': []
-        }  
+  def set_axis_label(self, x_axis, y_axis):
+    self.plot['x-axis'] = x_axis
+    self.plot['y-axis'] = y_axis
 
-    def set_axis_label(self, x_axis, y_axis):
-      self.plot['x-axis'] = x_axis
-      self.plot['y-axis'] = y_axis
+  def add_datapoints(self, name, X, Y):
+    self.plot['data'].append({
+      'legend': name,
+      'X': X,
+      'Y': Y
+      })
 
-    def add_datapoints(self, name, X, Y):
-      self.plot['data'].append({
-                        'legend': name,
-                        'X': X,
-                        'Y': Y
-                    })
+  def show(self):
+    print(self.plot)
 
-    def show(self):
-      print(self.plot)
-    
-    def toDictionary(self):
-      return self.plot
+  def toDictionary(self):
+    return self.plot
 
 ##################################################
 
@@ -44,7 +43,7 @@ class ScatterPlot3(Plot):
             'y-axis': 'y-axis',
             'z-axis': 'z-axis',
             'data': []
-        }  
+        }
 
     def set_axis_label(self, x_axis, y_axis, z_axis):
       self.plot['x-axis'] = x_axis
@@ -100,20 +99,23 @@ class Templater(object):
         self.context = {
             'name': docname,
             'plots': []
-        }  
+        }
 
     def add_plot(self, plot):
       if not isinstance(plot, Plot):
         raise TypeError()
       self.context['plots'].append(plot.toDictionary())
-    
+
     def show(self):
       print(self.context)
-    
+
     def toDictionary(self):
       return self.contex
 
     def render(self, filename, template_type):
+      if not self.context['plots']:
+        return False
+
       if ('tex' or 'latex') in template_type:
         template_filename = 'latex.tex'
       elif ('html' or 'HTML') in template_type:
@@ -124,5 +126,7 @@ class Templater(object):
       with open(filename, 'w') as f:
           render = self.TEMPLATE_ENVIRONMENT.get_template(template_filename).render(self.context)
           f.write(render)
+
+      return True
 
 ##################################################

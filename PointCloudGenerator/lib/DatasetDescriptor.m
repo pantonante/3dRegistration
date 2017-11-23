@@ -6,6 +6,7 @@ classdef DatasetDescriptor
     % <-- Properties
     properties
         Variable
+        Diameter
         Container
     end
     % --> end properties
@@ -13,12 +14,21 @@ classdef DatasetDescriptor
     % <-- Methods
     methods
         % Constructor
-        function dd = DatasetDescriptor(variable)
-            if nargin == 1 && ischar(variable)
-                dd.Variable = variable;
-                dd.Container = containers.Map;
+        function dd = DatasetDescriptor(variable, dataset_diameter)
+            if nargin == 2
+                if ischar(variable)
+                    dd.Variable = variable;
+                    dd.Container = containers.Map;
+                else
+                    error('[DatasetDescriptor] Variable must be a string')
+                end
+                if isnumeric(dataset_diameter)
+                    dd.Diameter = dataset_diameter;
+                else
+                    error('[DatasetDescriptor] Diameter must be a number')
+                end
             else
-                error('[DatasetDescriptor] Input must be a string')
+                error('[DatasetDescriptor] Requires variable and dataset diameter')
             end
         end
          
@@ -43,6 +53,7 @@ classdef DatasetDescriptor
             fileID = fopen(output_filename, 'w');
             fprintf(fileID,'{\n');
             fprintf(fileID,'\t"dataset_variable": "%s",\n',dd.Variable);
+            fprintf(fileID,'\t"ptCloud_diameter": "%f",\n',dd.Diameter);
             fprintf(fileID,'\t"dataset": [\n'); 
             
             keyset = keys(dd.Container);

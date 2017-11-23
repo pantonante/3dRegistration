@@ -16,11 +16,22 @@ Eigen::Matrix4f FastGlobalRegistration::performRegistration(){
 }
 
 FastGlobalRegistration::FastGlobalRegistration(pcl::PointCloud<pcl::PointXYZ>::Ptr ptCloud_P, 
-	pcl::PointCloud<pcl::PointXYZ>::Ptr ptCloud_Q, bool verbose)
+	pcl::PointCloud<pcl::PointXYZ>::Ptr ptCloud_Q, FGROptions options)
 {
 	Points pts_P, pts_Q;
 	Feature feat_P,feat_Q;
-	this->verbose = verbose;
+
+	this->verbose               = options.verbose;
+	this->closed_form           = options.closed_form;
+	this->use_absolute_scale    = options.use_absolute_scale;		// Measure distance in absolute scale (1) or in scale relative to the diameter of the model (0)
+	this->div_factor            = options.div_factor; 				// Division factor used for graduated non-convexity
+	this->max_corr_dist         = options.max_corr_dist;			// Maximum correspondence distance (also see comment of USE_ABSOLUTE_SCALE)
+	this->iteration_number 		= options.iteration_number;			// Maximum number of iteration
+	this->tuple_scale 			= options.tuple_scale;				// Similarity measure used for tuples of feature points.
+	this->tuple_max_count 		= options.tuple_max_count;			// Maximum tuple numbers.
+	this->stop_mse              = options.stop_mse;					// Stop criteria
+	this->normals_search_radius = options.normals_search_radius;	// Normals estimation search radius
+	this->fpfh_search_radius    = options.fpfh_search_radius;		// FPFH estimation search radius
 
 	/* Point Clouds Initialization */
 	// Point Cloud P
@@ -78,7 +89,7 @@ pcl::PointCloud<pcl::FPFHSignature33>::Ptr FastGlobalRegistration::computeFPFH(p
 	pcl::search::KdTree<pcl::PointXYZ>::Ptr tree (new pcl::search::KdTree<pcl::PointXYZ>);
 	normalEstimation.setSearchMethod (tree);
 	pcl::PointCloud<pcl::Normal>::Ptr cloudWithNormals (new pcl::PointCloud<pcl::Normal>);
-	normalEstimation.setRadiusSearch (normals_search_radius*GlobalScale);
+	normalEstimation.setRadiusSearch (normals_search_radius);
 	normalEstimation.compute (*cloudWithNormals);
 
 	// Setup the feature computation
@@ -96,7 +107,7 @@ pcl::PointCloud<pcl::FPFHSignature33>::Ptr FastGlobalRegistration::computeFPFH(p
 	fpfhEstimation.setSearchMethod (tree);
 
 	pcl::PointCloud<pcl::FPFHSignature33>::Ptr pfhFeatures(new pcl::PointCloud<pcl::FPFHSignature33>);
-	fpfhEstimation.setRadiusSearch (fpfh_search_radius*GlobalScale);
+	fpfhEstimation.setRadiusSearch (fpfh_search_radius);
 	// Actually compute the spin images
 	fpfhEstimation.compute (*pfhFeatures);
 
@@ -426,14 +437,16 @@ void FastGlobalRegistration::NormalizePoints()
 	if(verbose)
 		cout << TAG << "Normalize points, global scale: " <<  GlobalScale << endl;
 
-	for (int i = 0; i < num; ++i)
-	{
-		int npti = pointcloud_[i].size();
-		for (int ii = 0; ii < npti; ++ii)
+	if(GlobalScale!=1.0f){
+		for (int i = 0; i < num; ++i)
 		{
-			pointcloud_[i][ii](0) /= GlobalScale;
-			pointcloud_[i][ii](1) /= GlobalScale;
-			pointcloud_[i][ii](2) /= GlobalScale;
+			int npti = pointcloud_[i].size();
+			for (int ii = 0; ii < npti; ++ii)
+			{
+				pointcloud_[i][ii](0) /= GlobalScale;
+				pointcloud_[i][ii](1) /= GlobalScale;
+				pointcloud_[i][ii](2) /= GlobalScale;
+			}
 		}
 	}
 }
@@ -453,7 +466,7 @@ double FastGlobalRegistration::OptimizePairwise(int numIter_)
 	int i = 0;
 	int j = 1;
 
-	// make another copy of pointcloud_[j].
+	// make another copy of pointcloud_[j] because we need to modify it
 	Points pcj_copy;
 	int npcj = pointcloud_[j].size();
 	pcj_copy.resize(npcj);
@@ -469,12 +482,20 @@ double FastGlobalRegistration::OptimizePairwise(int numIter_)
 	trans.setIdentity();
 
 	for (int itr = 0; itr < numIter; itr++) {
-
-		if(itr > 0 && (par <= max_corr_dist || fitness[fitness.size()-1]<=stop_mse))
-			break;
+        /* Stopping conditions */
+        // 1. If we achieved the right accuracy
+        if(itr > 0 && fitness[itr-1]<=stop_mse)
+            break;
+        // 2. If the registration error is increasing
+        if(itr >= MAX_INCREASING_MSE_ITERATIONS){
+            bool stop = true;
+            for(int i=itr-1; i>=itr-MAX_INCREASING_MSE_ITERATIONS; i--)
+                stop&=(fitness[i]-fitness[i-1])>MAX_MSE_THRESHOLD;
+            if(stop) break;
+        }
 
 		// graduated non-convexity.
-		if (itr % 4 == 0) {
+		if (itr % 4 == 0 && par > max_corr_dist){
 			par /= div_factor;
 		}
 
@@ -495,7 +516,7 @@ double FastGlobalRegistration::OptimizePairwise(int numIter_)
 			p = pointcloud_[i][ii];
 			q = pcj_copy[jj];
 			Eigen::Vector3f rpq = p - q;
-			align_error.push_back(rpq.dot(rpq)*GlobalScale);
+			align_error.push_back(rpq.dot(rpq)*GlobalScale*GlobalScale);
 
 			int c2 = c;
 
@@ -587,21 +608,32 @@ double FastGlobalRegistration::OptimizePairwise_ClosedForm(int numIter_)
 	if (corres_.size() < 10)
 		return -1;
 
-	std::vector<double> s(corres_.size(), 1.0);
+	//std::vector<double> s(corres_.size(), 1.0);
 
-	for (int itr = 0; itr < numIter; itr++) {
+	for (int itr = 0; itr < numIter && par > max_corr_dist; itr++)
+	{
 		Points p_corr, q_corr;
 		vector<float> align_error;
 
-		if(itr > 0 && fitness[fitness.size()-1]<=stop_mse)
+        /* Stopping conditions */
+        // 1. If we achieved the right accuracy
+		if(itr > 0 && fitness[itr-1]<=stop_mse)
 			break;
-
+        // 2. If the registration error is increasing
+        if(itr>=MAX_INCREASING_MSE_ITERATIONS){
+            bool stop = true;
+            for(int i=itr-1; i>=itr-MAX_INCREASING_MSE_ITERATIONS; i--)
+                stop&=(fitness[i]-fitness[i-1])>MAX_MSE_THRESHOLD;
+            if(stop) break;
+        }
+        
 		// graduated non-convexity.
-		if (par > max_corr_dist) {
+		/*if (par > max_corr_dist) {
 			par /= div_factor;
 		}else{
 			break;
-		}
+		}*/
+        if(itr > 0) par /= div_factor;
 
 		for (int c = 0; c < corres_.size(); c++) {
 			int ii = corres_[c].first;
@@ -610,12 +642,12 @@ double FastGlobalRegistration::OptimizePairwise_ClosedForm(int numIter_)
 			p = pointcloud_[i][ii];
 			q = pcj_copy[jj];
 			Eigen::Vector3f rpq = p - q;
-			align_error.push_back(rpq.dot(rpq)*GlobalScale);
+			align_error.push_back(rpq.dot(rpq)*GlobalScale*GlobalScale);
 
-			float temp = par / (rpq.dot(rpq) + par);
-			s[c] = temp * temp;
-			p_corr.push_back(p*s[c]*s[c]);
-			q_corr.push_back(q*s[c]*s[c]);
+			float l_pq = par / (rpq.dot(rpq) + par);
+			float s = sqrt(l_pq);
+			p_corr.push_back(p*s);
+			q_corr.push_back(q*s);
 		}
 		fitness.push_back(accumulate(align_error.begin(), align_error.end(), 0.0)/align_error.size());
 
