@@ -62,53 +62,50 @@ Before running an experiment, you need to create the JSON descriptor file. A sim
     "ptCloud_diameter": "0.276120",
     "dataset_variable": "Noise",
     "dataset": [
-        {
-            "value": "0.0",
-            "P": [
-                "../dataset/bunny_noise/bunny_noise0/ptCloud_P1.pcd",
-                "../dataset/bunny_noise/bunny_noise0/ptCloud_P2.pcd"
-            ],
-            "Q": [
-                "../dataset/bunny_noise/bunny_noise0/ptCloud_Q1.pcd",
-                "../dataset/bunny_noise/bunny_noise0/ptCloud_Q2.pcd"
-            ],
-            "T": [
-                "../dataset/bunny_noise/bunny_noise0/T1.txt",
-                "../dataset/bunny_noise/bunny_noise0/T2.txt"
-            ]
-        },
-        {
-            "value": "0.005",
-            "P": [
-                "../dataset/bunny_noise/bunny_noise0005/ptCloud_P1.pcd",
-                "../dataset/bunny_noise/bunny_noise0005/ptCloud_P2.pcd"
-            ],
-            "Q": [
-                "../dataset/bunny_noise/bunny_noise0005/ptCloud_Q1.pcd",
-                "../dataset/bunny_noise/bunny_noise0005/ptCloud_Q2.pcd"
-            ],
-            "T": [
-                "../dataset/bunny_noise/bunny_noise0005/T1.txt",
-                "../dataset/bunny_noise/bunny_noise0005/T2.txt"
-            ]     
-        }
+      {
+        "value": "0.0",
+        "P": [
+          "../dataset/bunny_noise/bunny_noise0/ptCloud_P1.pcd",
+          "../dataset/bunny_noise/bunny_noise0/ptCloud_P2.pcd"
+        ],
+        "Q": [
+          "../dataset/bunny_noise/bunny_noise0/ptCloud_Q1.pcd",
+          "../dataset/bunny_noise/bunny_noise0/ptCloud_Q2.pcd"
+        ],
+        "T": [
+          "../dataset/bunny_noise/bunny_noise0/T1.txt",
+          "../dataset/bunny_noise/bunny_noise0/T2.txt"
+        ]
+      },
+      {
+          "value": "0.005",
+          "P": [
+            "../dataset/bunny_noise/bunny_noise0005/ptCloud_P1.pcd",
+            "../dataset/bunny_noise/bunny_noise0005/ptCloud_P2.pcd"
+          ],
+          "Q": [
+            "../dataset/bunny_noise/bunny_noise0005/ptCloud_Q1.pcd",
+            "../dataset/bunny_noise/bunny_noise0005/ptCloud_Q2.pcd"
+          ],
+          "T": [
+            "../dataset/bunny_noise/bunny_noise0005/T1.txt",
+            "../dataset/bunny_noise/bunny_noise0005/T2.txt"
+          ]     
+      }
     ],
     "parameters": [
-        {
-            "name": "Tuple Scale",
-            "flag": "--tuple-scale",
-            "nominal": "0.95",
-            "values": [
-                "0.9",
-                "0.95"
-            ]
-        },
-        {
-            "name": "Graduated non-convexity",
-            "flag": "--div-factor",
-            "nominal": "1.2",
-            "values": []
-        }
+      {
+        "name": "Tuple Scale",
+        "flag": "--tuple-scale",
+        "nominal": "0.95",
+        "values": ["0.9", "0.95"]
+      },
+      {
+        "name": "Graduated non-convexity",
+        "flag": "--div-factor",
+        "nominal": "1.2",
+        "values": []
+      }
     ]
 }
 ```
@@ -149,33 +146,33 @@ Descriptor example
 
 ```json
 {
-	"name": "Simple Experiment",
+    "name": "Simple Experiment",
     "exe": "../build/FastGlobalRegistration",
     "additional_flags": "-a -c",
     "output": "simple_exp.html",
-	"dataset_variable": "noise",
-	"ptCloud_diameter": "0.232839",
-	"dataset": [
-		{
-			"value": "0.002",
-			"P": ["../bunny_noise/bunny0002/ptCloud_P1.pcd"],
-			"Q": ["../bunny_noise/ptCloud_Q.pcd"],
-			"T": ["../bunny_noise/bunny0002/T1.txt"]
-		}
-	],
-	"parameters": [
-        {
-            "name":"Tuple Scale",
-            "flag":"--tuple-scale",
-            "nominal": "0.95",
-            "values": []
-        },
-        {
-            "name": "Graduated non-convexity",
-            "flag": "--div-factor",
-            "nominal": "1.4",
-            "values": []
-         }
+    "dataset_variable": "noise",
+    "ptCloud_diameter": "0.232839",
+    "dataset": [
+      {
+        "value": "0.002",
+        "P": ["../bunny_noise/bunny0002/ptCloud_P1.pcd"],
+        "Q": ["../bunny_noise/ptCloud_Q.pcd"],
+        "T": ["../bunny_noise/bunny0002/T1.txt"]
+      }
+    ],
+    "parameters": [
+      {
+        "name":"Tuple Scale",
+        "flag":"--tuple-scale",
+        "nominal": "0.95",
+        "values": []
+      },
+      {
+        "name": "Graduated non-convexity",
+        "flag": "--div-factor",
+        "nominal": "1.4",
+        "values": []
+      }
     ]
 }
 ```
