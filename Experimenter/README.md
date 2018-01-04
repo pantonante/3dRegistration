@@ -19,7 +19,7 @@ The sets of point clouds and of parameters are described in the JSON file, which
 After the experiment the script generates a **LaTeX** or **HTML** report file with the error graphs (rotation and translation) for each parameter-experiment as follow:
 
 <p align="center">
-<img alt="Error function" src="http://latex.codecogs.com/svg.latex?%5Cbegin%7Balign%2A%7D%0D%0A%26%5Cepsilon_%7B%5Ctext%7Brotation%7D%7D%3D%5ClVert%5Ctext%7Bangle%7D%5Cbig%28R_%7B%5Ctext%7Bground%20truth%7D%7D%5Ccdot%20R_%7B%5Ctext%7Bestimated%7D%7D%5ET%5Cbig%29%5CrVert%5C%5C%0D%0A%26%5Cepsilon_%7B%5Ctext%7Btranslation%7D%7D%3D%5ClVert%20t_%7B%5Ctext%7Bground%20truth%7D%7D-t_%7B%5Ctext%7Bestimated%7D%7D%20%5CrVert%0D%0A%5Cend%7Balign%2A%7D">
+<img alt="Error function" src="http://latex.codecogs.com/svg.latex?%5Cbegin%7Balign%2A%7D%0D%0A%26E_%7B%5Ctext%7Brotation%7D%7D%3D%5ClVert%5Ctext%7Bangle%7D%5Cbig%28R_%7B%5Ctext%7Bground%20truth%7D%7D%5Ccdot%20R_%7B%5Ctext%7Bestimated%7D%7D%5ET%5Cbig%29%5CrVert%5C%5C%0D%0A%26E_%7B%5Ctext%7Btranslation%7D%7D%3D%5ClVert%20t_%7B%5Ctext%7Bground%20truth%7D%7D-t_%7B%5Ctext%7Bestimated%7D%7D%20%5CrVert%0D%0A%5Cend%7Balign%2A%7D">
 </p>
 
 
@@ -55,33 +55,53 @@ Before running an experiment, you need to create the JSON descriptor file. A sim
  
 ```json
 {
-    "name": "Simple experiment (test)",
-    "exe": "../FastGlobalRegistration/build/FastGlobalRegistration",
+    "name": "Parameters experiment",
+    "exe": "../build/FastGlobalRegistration",
     "additional_flags": "-c",
-    "report_flag":"-j",
     "output": "report.html",
     "ptCloud_diameter": "0.276120",
     "dataset_variable": "Noise",
     "dataset": [
         {
             "value": "0.0",
-            "P": ["../dataset/bunny_noise/bunny_noise0/ptCloud_P1.pcd","../dataset/bunny_noise/bunny_noise0/ptCloud_P2.pcd"],
-            "Q": ["../dataset/bunny_noise/bunny_noise0/ptCloud_Q1.pcd""../dataset/bunny_noise/bunny_noise0/ptCloud_Q2.pcd"],
-            "T": ["../dataset/bunny_noise/bunny_noise0/T1.txt","../dataset/bunny_noise/bunny_noise0/T2.txt"]"
+            "P": [
+                "../dataset/bunny_noise/bunny_noise0/ptCloud_P1.pcd",
+                "../dataset/bunny_noise/bunny_noise0/ptCloud_P2.pcd"
+            ],
+            "Q": [
+                "../dataset/bunny_noise/bunny_noise0/ptCloud_Q1.pcd",
+                "../dataset/bunny_noise/bunny_noise0/ptCloud_Q2.pcd"
+            ],
+            "T": [
+                "../dataset/bunny_noise/bunny_noise0/T1.txt",
+                "../dataset/bunny_noise/bunny_noise0/T2.txt"
+            ]
         },
         {
             "value": "0.005",
-            "P": ["../dataset/bunny_noise/bunny_noise0005/ptCloud_P1.pcd","../dataset/bunny_noise/bunny_noise0005/ptCloud_P2.pcd"],
-            "Q": ["../dataset/bunny_noise/bunny_noise0005/ptCloud_Q1.pcd""../dataset/bunny_noise/bunny_noise0005/ptCloud_Q2.pcd"],
-            "T": ["../dataset/bunny_noise/bunny_noise0005/T1.txt","../dataset/bunny_noise/bunny_noise0005/T2.txt"]"        
+            "P": [
+                "../dataset/bunny_noise/bunny_noise0005/ptCloud_P1.pcd",
+                "../dataset/bunny_noise/bunny_noise0005/ptCloud_P2.pcd"
+            ],
+            "Q": [
+                "../dataset/bunny_noise/bunny_noise0005/ptCloud_Q1.pcd",
+                "../dataset/bunny_noise/bunny_noise0005/ptCloud_Q2.pcd"
+            ],
+            "T": [
+                "../dataset/bunny_noise/bunny_noise0005/T1.txt",
+                "../dataset/bunny_noise/bunny_noise0005/T2.txt"
+            ]     
         }
     ],
     "parameters": [
         {
-            "name":"Tuple Scale",
-            "flag":"--tuple-scale",
+            "name": "Tuple Scale",
+            "flag": "--tuple-scale",
             "nominal": "0.95",
-            "values": ["0.9","0.95"]
+            "values": [
+                "0.9",
+                "0.95"
+            ]
         },
         {
             "name": "Graduated non-convexity",
@@ -100,7 +120,6 @@ All fields are **mandatory** except `output` that can be expressed from the comm
     - needs to take two point clouds by specifying `-p` and `-q`
     - needs to generate a supported json report
 - `additional_flags`: set some flags common to every experiment (e.g., select the closed form solution)
-- `report_flag`: the flag needed to specify the json output from the algorithm
 - `output`: path to the output report (the extension selects the format)
 - `dataset_variable`:  represents the x-axis in the graphs
 - `ptCloud_diameter`: the diameter of the reference point cloud (pt. Cloud Q); it is useful to compute the translation error as percentage of the diameter
@@ -126,7 +145,62 @@ There are three operational modes, automatically selected on the data available 
 
 If you specify **only a point cloud pair** and **only nominal values for parameters**, you are running a simple experiment. In other words, the algorithm will be executed once on the pair and the output compared against the ground truth.
 
-In this case, the report will not be generated (the report is printed on the console).
+Descriptor example 
+
+```json
+{
+	"name": "Simple Experiment",
+    "exe": "../build/FastGlobalRegistration",
+    "additional_flags": "-a -c",
+    "output": "simple_exp.html",
+	"dataset_variable": "noise",
+	"ptCloud_diameter": "0.232839",
+	"dataset": [
+		{
+			"value": "0.002",
+			"P": ["../bunny_noise/bunny0002/ptCloud_P1.pcd"],
+			"Q": ["../bunny_noise/ptCloud_Q.pcd"],
+			"T": ["../bunny_noise/bunny0002/T1.txt"]
+		}
+	],
+	"parameters": [
+        {
+            "name":"Tuple Scale",
+            "flag":"--tuple-scale",
+            "nominal": "0.95",
+            "values": []
+        },
+        {
+            "name": "Graduated non-convexity",
+            "flag": "--div-factor",
+            "nominal": "1.4",
+            "values": []
+         }
+    ]
+}
+```
+
+In this case, the output field will be ignored since the report will be printed on the console:
+
+```
+## Evaluating 'Simple Experiment'...
+### TRANSFORMATION MATRIX
+[[-0.202523 -0.514556  0.833201  0.473546]
+ [-0.885021 -0.26805  -0.380659  0.731453]
+ [ 0.419209 -0.814487 -0.401103  0.521201]
+ [ 0.        0.        0.        1.      ]]
+### ERRORS
+ RMSE:              0.0239006
+ Rotation Error:    0.0241262316243 rad
+ Translation Error: 0.9564957751 % of the diameter
+### TIMINGS
+ Features computation: 0.291498 sec
+ Matching: 0.090683 sec
+ Normalization: 0.006959 sec
+ Registration: 0.440064 sec
+## Finish.
+Experiment completed in 1.55 seconds
+```
 
 ### Dataset experiment
 
@@ -134,7 +208,7 @@ If you specify **more than one point cloud pair** and **only nominal values for 
 
 ### Parameters experiment
 
-If you specify **more than one point cloud pair** and **values for at least one parameter** than you are running a parameters experiment. The algorithm will be executed on all the datasets, eventually averaging on point clouds corresponding on the same value level (note that for each dataset, P, Q, and T are vectors) testing all the parameter combinations.
+If you specify **more than one point cloud pair** and **values for at least one parameter** than you are running a parameters experiment (see the first example). The algorithm will be executed on all the datasets, eventually averaging on point clouds corresponding on the same value level (note that for each dataset, P, Q, and T are vectors) testing all the parameter combinations.
 
 The parameters combination are computed in the following way: for each parameter, the algorithm is executed using every possible value from the values array, setting all the other parameters with their nominal values.
 
@@ -152,6 +226,13 @@ To run more than one experiment in parallel, you can use [GNU parallel](https://
 ```sh
 parallel python experimenter.py ::: descriptor_1.json descriptor_2.json
 ```
+
+or, if you have a list of descriptor (one descriptor file each line) in a text file called `desc.lst` than
+
+```sh
+cat desc.lst | parallel python experimenter.py
+```
+
 
 ## License
 MIT Copyright (c) Pasquale Antonante

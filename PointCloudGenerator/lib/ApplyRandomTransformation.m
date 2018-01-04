@@ -1,4 +1,4 @@
-function [ptCloud_Q, T] = ApplyRandomTransformation( ptCloud, max_rot, min_t, max_t )
+function [ptCloud_P, T] = ApplyRandomTransformation( ptCloud, max_rot, min_t, max_t )
 % apply a random rigid transformation to a point cloud to get a roto-translated
 % point cloud
 % Parameters:
@@ -21,8 +21,7 @@ t=[ rnd_sign()*rnd_in_interval(min_v(1), max_v(1)),...
 % compose rigid transformation
 T=[R,t;[0 0 0 1]];
 
-tform = affine3d(T');
-ptCloud_Q=pctransform(ptCloud,tform);
+ptCloud_P=transformPtCloud(ptCloud,T);
 
 end
 

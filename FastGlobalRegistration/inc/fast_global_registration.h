@@ -28,7 +28,6 @@ public:
 	bool 	verbose 				= VERBOSE;
 	bool 	use_absolute_scale 		= USE_ABSOLUTE_SCALE;	// Measure distance in absolute scale (1) or in scale relative to the diameter of the model (0)
 	float 	div_factor 				= DIV_FACTOR; 			// Division factor used for graduated non-convexity
-	float 	max_corr_dist 			= MAX_CORR_DIST;		// Maximum correspondence distance (also see comment of USE_ABSOLUTE_SCALE)
 	int 	iteration_number 		= ITERATION_NUMBER;		// Maximum number of iteration
 	float 	tuple_scale 			= TUPLE_SCALE;			// Similarity measure used for tuples of feature points.
 	int 	tuple_max_count 		= TUPLE_MAX_CNT;		// Maximum tuple numbers.

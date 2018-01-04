@@ -10,13 +10,12 @@ clear all
 close all
 clc
 
-addpath('./lib')
-
 rng shuffle
 
 %% Configuration
 
-plyFile = 'data/bunny/reconstruction/bun_zipper_res3.ply'; %input dataset
+plyFile_P = 'data/bunny/reconstruction/bun_zipper_res3.ply'; % moving
+plyFile_Q = 'data/bunny/reconstruction/bun_zipper_res3.ply'; % fix
 output_folder = 'bunny_noise'; % the output folder
 output_basename = 'bunny'; %the basename of the folder containing
 	% the point clouds associated with the current `value`level
@@ -49,9 +48,9 @@ end
 mkdir(dir) %create the output folder
 clear dir
 
-% Load the dataset
-ptCloud_Q = pcread(plyFile);
-disp(['Point Cloud `', plyFile, '` successfully loaded.'])
+% Load the point cloud Q
+ptCloud_Q = pcread(plyFile_Q);
+disp(['Point Cloud `', plyFile_Q, '` successfully loaded.'])
 disp(['Number of points: ', num2str(ptCloud_Q.Count)])
 ptCloudQ_filename = fullfile(pwd, output_folder, ...
     'ptCloud_Q.pcd');
@@ -60,14 +59,15 @@ savepcd(ptCloudQ_filename, ptCloud_Q.Location', 'binary'); %this pt.cloud never 
 % Initialize the dataset descriptor
 dd = DatasetDescriptor(variable, getDiameter(ptCloud_Q));
 
+% Load the point cloud P
+ptCloud_P = pcread(plyFile_P);
+
 % Downsample (once for all)
 if(donwsampling_ratio>0)
-    ptCloud_P = pcdownsample(ptCloud_Q, ...
+    ptCloud_P = pcdownsample(ptCloud_P, ...
         downsampling_method, donwsampling_ratio);
     disp(['Number of points after downsampling: ', ...
         num2str(ptCloud_P.Count)])
-else
-    ptCloud_P = copy(ptCloud_Q);
 end
 
 % Minimum translation is required, if 'auto' eanbled, it need to be computed

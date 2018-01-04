@@ -153,7 +153,6 @@ void HTMLreport(FastGlobalRegistration fgr, std::string filename){
 	fid<< "<tr><td>Scale</td><td>";	if(fgr.use_absolute_scale) fid<<"absolute"; else fid<<"relative"; fid<<"</td>"<<endl;
 	fid<< "<tr><td>Stop RMSE</td><td>"<< sqrt(fgr.stop_mse) <<"</td>"<<endl;
 	fid<< "<tr><td>Div. factor</td><td>"<< fgr.div_factor <<"</td>"<<endl;
-	fid<< "<tr><td>Max. correlation distance</td><td>"<< fgr.max_corr_dist<<"</td>"<<endl;
 	fid<< "<tr><td>Max. number of iterations</td><td>"<< fgr.iteration_number <<"</td>"<<endl;
 	fid<< "<tr><td>Similarity measure</td><td>"<< fgr.tuple_scale <<"</td>"<<endl;
 	fid<< "<tr><td>Max. corr. tuples</td><td>"<< fgr.tuple_max_count <<"</td>"<<endl;
@@ -206,7 +205,6 @@ void JSONreport(FastGlobalRegistration fgr, std::string filename){
 	fid<< "\t{\n\t\t\"name\":\"Scale\",\n\t\t\"value\":";	if(fgr.use_absolute_scale) fid<<"\"absolute\""; else fid<<"\"relative\""; fid<<"\n\t},"<<endl;
 	fid<< "\t{\n\t\t\"name\":\"Stop RMSE\",\n\t\t\"value\":"<< sqrt(fgr.stop_mse) <<"\n\t},"<<endl;
 	fid<< "\t{\n\t\t\"name\":\"Div. factor\",\n\t\t\"value\":"<< fgr.div_factor <<"\n\t},"<<endl;
-	fid<< "\t{\n\t\t\"name\":\"Max. correlation distance\",\n\t\t\"value\":"<< fgr.max_corr_dist<<"\n\t},"<<endl;
 	fid<< "\t{\n\t\t\"name\":\"Max. number of iterations\",\n\t\t\"value\":"<< fgr.iteration_number <<"\n\t},"<<endl;
 	fid<< "\t{\n\t\t\"name\":\"Similarity measure\",\n\t\t\"value\":"<< fgr.tuple_scale <<"\n\t},"<<endl;
 	fid<< "\t{\n\t\t\"name\":\"Max. corr. tuples\",\n\t\t\"value\":"<< fgr.tuple_max_count <<"\n\t},"<<endl;

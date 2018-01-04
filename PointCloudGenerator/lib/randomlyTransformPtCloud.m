@@ -13,9 +13,6 @@ ptCloud_P = AddNoise(ptCloud_P, sigma);
 %% Add Outliers
 ptCloud_P = AddOutliers(ptCloud_P, beta);
 
-%% SHOW
+%% Colors
 ptCloud_Q.Color = uint8( repmat([255 0 0], ptCloud_Q.Count ,1) ); % red
 ptCloud_P.Color = uint8( repmat([0 0 255], ptCloud_P.Count ,1) ); % green
-pcshow(ptCloud_Q)
-hold on
-pcshow(ptCloud_P)

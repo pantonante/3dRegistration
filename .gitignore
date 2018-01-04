@@ -1,2 +1,4 @@
 # MacOS
 .DS_Store
+.vscode
+vc.code-workspace

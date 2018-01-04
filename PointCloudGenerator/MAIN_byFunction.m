@@ -10,12 +10,10 @@ clear all
 close all
 clc
 
-addpath('./lib')
-
 f = @(X,Y) (10*sin(sqrt(X.^2 + Y.^2)) + 0.1) ./ sqrt(X.^2 + Y.^2);
-x_space = -8:.25:8;
-y_space = -8:.25:8;
-sigma = 0.05; % noise
+x_space = -8:.5:8;
+y_space = -8:.5:8;
+sigma = 0.02; % noise
 beta = 3/100; % outliers percentage
 
 %% Generation
@@ -27,4 +25,4 @@ ptCloud_Q = PCbyFunc(f,x_space,y_space);
 %% Save
 savepcd('ptCloud_Q.pcd',ptCloud_Q.Location','binary');
 savepcd('ptCloud_P.pcd',ptCloud_P.Location','binary');
-SaveTransformationMatrix(T,'trans.mat');
+SaveTransformationMatrix(T,'T.txt');

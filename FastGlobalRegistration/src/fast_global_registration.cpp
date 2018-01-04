@@ -25,7 +25,6 @@ FastGlobalRegistration::FastGlobalRegistration(pcl::PointCloud<pcl::PointXYZ>::P
 	this->closed_form           = options.closed_form;
 	this->use_absolute_scale    = options.use_absolute_scale;		// Measure distance in absolute scale (1) or in scale relative to the diameter of the model (0)
 	this->div_factor            = options.div_factor; 				// Division factor used for graduated non-convexity
-	this->max_corr_dist         = options.max_corr_dist;			// Maximum correspondence distance (also see comment of USE_ABSOLUTE_SCALE)
 	this->iteration_number 		= options.iteration_number;			// Maximum number of iteration
 	this->tuple_scale 			= options.tuple_scale;				// Similarity measure used for tuples of feature points.
 	this->tuple_max_count 		= options.tuple_max_count;			// Maximum tuple numbers.
@@ -372,8 +371,16 @@ void FastGlobalRegistration::AdvancedMatching()
 
 	corres_ = corres;
 
+	///////////////////////////
+	/// ERASE DUPLICATES
+	/// input : corres_
+	/// output : corres_
+	///////////////////////////
+	sort(corres_.begin(), corres_.end());
+	corres_.erase(unique(corres_.begin(), corres_.end()), corres_.end());
+
 	if(verbose)
-		cout<<TAG<<"\t- final matches "<< (int)corres.size() <<" tuples."<<endl;
+		cout<<TAG<<"\t- final matches "<< (int)corres_.size() <<" tuples."<<endl;
 }
 
 // Normalize scale of points.
@@ -487,15 +494,15 @@ double FastGlobalRegistration::OptimizePairwise(int numIter_)
         if(itr > 0 && fitness[itr-1]<=stop_mse)
             break;
         // 2. If the registration error is increasing
-        if(itr >= MAX_INCREASING_MSE_ITERATIONS){
+        /*if(itr >= MAX_INCREASING_MSE_ITERATIONS){
             bool stop = true;
             for(int i=itr-1; i>=itr-MAX_INCREASING_MSE_ITERATIONS; i--)
                 stop&=(fitness[i]-fitness[i-1])>MAX_MSE_THRESHOLD;
             if(stop) break;
-        }
+        }*/
 
 		// graduated non-convexity.
-		if (itr % 4 == 0 && par > max_corr_dist){
+		if (itr % 4 == 0){
 			par /= div_factor;
 		}
 
@@ -598,7 +605,7 @@ double FastGlobalRegistration::OptimizePairwise_ClosedForm(int numIter_)
 	int i = 0; //ptCloud_P
 	int j = 1; //ptCloud_Q
 
-	// make another copy of pointcloud_[j].
+	// make another copy of pointcloud_[j] == ptCloud Q.
 	Points pcj_copy;
 	int npcj = pointcloud_[j].size();
 	pcj_copy.resize(npcj);
@@ -610,7 +617,7 @@ double FastGlobalRegistration::OptimizePairwise_ClosedForm(int numIter_)
 
 	//std::vector<double> s(corres_.size(), 1.0);
 
-	for (int itr = 0; itr < numIter && par > max_corr_dist; itr++)
+	for (int itr = 0; itr < numIter; itr++)
 	{
 		Points p_corr, q_corr;
 		vector<float> align_error;
@@ -620,19 +627,14 @@ double FastGlobalRegistration::OptimizePairwise_ClosedForm(int numIter_)
 		if(itr > 0 && fitness[itr-1]<=stop_mse)
 			break;
         // 2. If the registration error is increasing
-        if(itr>=MAX_INCREASING_MSE_ITERATIONS){
+        /*if(itr>=MAX_INCREASING_MSE_ITERATIONS){
             bool stop = true;
             for(int i=itr-1; i>=itr-MAX_INCREASING_MSE_ITERATIONS; i--)
                 stop&=(fitness[i]-fitness[i-1])>MAX_MSE_THRESHOLD;
             if(stop) break;
-        }
+        }*/
         
 		// graduated non-convexity.
-		/*if (par > max_corr_dist) {
-			par /= div_factor;
-		}else{
-			break;
-		}*/
         if(itr > 0) par /= div_factor;
 
 		for (int c = 0; c < corres_.size(); c++) {

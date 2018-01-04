@@ -115,8 +115,7 @@ class Experimenter:
             desc) + self.dataset_args(ptCloud_P, ptCloud_Q)
         for par in desc["parameters"]:
             cmd = cmd + self.add_arg(par["flag"], par["nominal"])
-        cmd = cmd + " " + desc["report_flag"] + " " + \
-            self.REPORT_FILENAME  # set up the report
+        cmd = cmd + " -j " + self.REPORT_FILENAME  # set up the report
         self.run_cmd(cmd)  # execute the algorithm
         # Read and analyze output
         try:
@@ -165,7 +164,7 @@ class Experimenter:
             plot_tra.set_axis_label(
                 desc['dataset_variable'], 'Error (% of diameter)')
             plot_rmse = Plot(par["name"] + ", RMSE")
-            plot_rot.set_axis_label(desc['dataset_variable'], 'RMSE')
+            plot_rmse.set_axis_label(desc['dataset_variable'], 'RMSE')
             for val in par["values"]: # for each value listed for that parameter 
                 values = []
                 y_rot = []
@@ -185,7 +184,7 @@ class Experimenter:
                         other_params = ( xpar for xpar in desc["parameters"] if par["flag"] != xpar["flag"] )
                         for xpar in other_params:
                             cmd = cmd + self.add_arg(xpar["flag"], xpar["nominal"])
-                            cmd = cmd + " " + desc["report_flag"] + " " + self.REPORT_FILENAME # set up the report
+                        cmd = cmd + " -j " + self.REPORT_FILENAME # set up the report
                         self.run_cmd(cmd) # execute the algorithm
                         # Read and analyze output
                         try:
@@ -266,7 +265,7 @@ class Experimenter:
                 cmd = self.base_cmd(desc) + self.dataset_args(ptCloud_P, ptCloud_Q) # create the command to run the alg. on the current dataset
                 for par in desc["parameters"]:
                     cmd = cmd + self.add_arg(par["flag"], par["nominal"])
-                cmd = cmd + " " + desc["report_flag"] + " " + self.REPORT_FILENAME # set up the report
+                cmd = cmd + " -j " + self.REPORT_FILENAME # set up the report
                 self.run_cmd(cmd) # execute the algorithm
 
                 # Read and analyze output

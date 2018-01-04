@@ -85,9 +85,6 @@ Algorithm parameters:
   --stop-rmse arg (=0.01)               Optimization stops when reach the given
                                         RMSE.
 
-  --max-corr-dist arg (=0.025)          Maximum correspondence distance (also
-                                        see abs-scale).
-
   -n [ --iterations ] arg (=64)         Maximum number of iteration.
 
   --tuple-scale arg (=0.95)             Similarity measure used for tuples of
@@ -102,7 +99,7 @@ Algorithm parameters:
 
 If the `abs-scale` flag is not enabled, all the distances of the model (e.g., search radii and correspondence distance) are measured relatively to the diameter of the point cloud. This is the default behavior with synthetic data. For real-world data, where the absolute scale is known a priori, these parameters can be set accordingly.
 
-The options `stop-rmse` and `max-corr-dist` determine when the optimization will stop. The first one is specifies the desired RMSE, the latter specifies a stoppng criteria on the graduated non-convexity parameter. In general, it should be set close to the threshold used to determine if a point pair is a match in global space. If you don't know how to set it, start with the default value _0.025_. Decreasing this parameter sometimes results in tighter alignment.
+The options `stop-rmse` and `iterations ` determine when the optimization will stop. The first one is specifies the desired RMSE, the latter the maximum number of iterations.
 
 The option `tuple-max-count` trades off between speed and accuracy. Increasing it will make the optimization slower, but the result can be more accurate.
 
