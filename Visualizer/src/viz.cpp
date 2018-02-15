@@ -24,12 +24,16 @@ void printUsage (const char* progName)
             << "-p filename    Point Cloud P [*.pcd]\n"
             << "-q filename    Point Cloud Q [*.pcd]\n"
             << "-t filename    Transformation Matrix (optional)\n"
+            << "-i             Invert transormation matrix before applying it\n"
             << "\n\n";
 }
 
 int main (int argc, char** argv){
   bool transform(false);
+  bool inv_T(false);
   std::string ptCloudP_filename, ptCloudQ_filename, trans_filename;
+  Eigen::Matrix3f R;
+  Eigen::Vector3f t;
 
   // --------------------------------------
   // -----Parse Command Line Arguments-----
@@ -54,6 +58,9 @@ int main (int argc, char** argv){
   if (pcl::console::find_argument (argc, argv, "-t") >= 0){
     transform = true;
     pcl::console::parse_argument (argc, argv, "-t", trans_filename);
+  }
+  if (pcl::console::find_argument (argc, argv, "-i") >= 0){
+    inv_T = true;
   }
 
   // -------------------------------------
@@ -93,6 +100,14 @@ int main (int argc, char** argv){
       cout<<endl;
     }
     f.close();
+
+    if(inv_T){ //if transformation inversion has been requested
+      R = T.block<3, 3>(0, 0);
+      t = T.block<3, 1>(0, 3);
+      T.block<3, 3>(0, 0) = R.transpose();
+      T.block<3, 1>(0, 3) = -R.transpose()*t;
+      cout << "Inverse matrix: " << endl << T << endl; 
+    }
 
     pcl::transformPointCloud (*ptCloud_Q, *Q_transformed, T);
   }
