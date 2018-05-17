@@ -1,11 +1,13 @@
 #pragma once
 
-#include "distance_transform.h"
+// #include "distance_transform.h"
 #include "goicp_options.h"
 
 #include <pcl/io/pcd_io.h>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
+
+#include "spdlog/spdlog.h"
 
 #include <Eigen/Core>
 
@@ -33,7 +35,10 @@ class Goicp {
   Node initNodeTrans;
   Node optNodeRot;
   Node optNodeTrans;
-  distance_transform::DistanceTransform dt;
+
+  GoicpOptions opts;
+
+  // distance_transform::DistanceTransform dt;
   float MSEThresh;
   float SSEThresh;
   float icpThresh;
@@ -41,10 +46,10 @@ class Goicp {
   float trimFraction;
   int inlierNum;
   bool doTrim;
-  Eigen::Affine3f transform;
 
-  Goicp(GoicpOptions opts);
+  Goicp(PointCloud::Ptr cloud_p, PointCloud::Ptr cloud_q, GoicpOptions options);
   float performRegistration();
+  Eigen::Matrix4f getTransform();
 
   /**
    * @brief Redefine new operator (suggested by Eigen).
@@ -54,10 +59,14 @@ class Goicp {
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
  private:
-  float icp(Eigen::Affine3f &transform);
+  std::shared_ptr<spdlog::logger> logger_;
+  Eigen::Matrix4f transform_;
+  Eigen::Vector3f cloudP_centroid_, cloudQ_centroid_;
+  float global_scale_;
+
+  float icp(Eigen::Matrix4f &transform);
   float innerBnB(float *maxRotDisL, Node *nodeTransOut);
   float outerBnB();
-  void initialize();
   void clear();
 };
 

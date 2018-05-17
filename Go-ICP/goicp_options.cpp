@@ -3,13 +3,20 @@
 namespace goicp {
 
 GoicpOptions::ReturnCode GoicpOptions::parse(int argc, char **argv) {
-  po::options_description desc("Required arguments");
+  po::options_description req("Required arguments");
   // clang-format off
-  desc.add_options()
+  req.add_options()
     ("pointcloudP,p", po::value<std::string>(&ptCloudP_filename)->required(),
       "Point cloud filename [*.pcd].\n")
     ("pointcloudQ,q", po::value<std::string>(&ptCloudQ_filename)->required(),
       "Point cloud filename [*.pcd].\n");
+  // clang-format on
+
+  po::options_description alg("Algorith parameters");
+  // clang-format off
+  alg.add_options()
+    ("icp-max-iter", po::value<int>(&icp_max_iterations)->default_value(goicp::defaults::kIcpMaxIterations),
+      "Vanilla ICP maximum iterations.\n");
   // clang-format on
 
   po::options_description misc("Miscellaneous");
@@ -21,7 +28,8 @@ GoicpOptions::ReturnCode GoicpOptions::parse(int argc, char **argv) {
   // clang-format on
 
   po::options_description all_options;
-  all_options.add(desc);
+  all_options.add(req);
+  all_options.add(alg);
   all_options.add(misc);
 
   po::variables_map vm;

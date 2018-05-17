@@ -13,9 +13,9 @@ namespace po = boost::program_options;
 
 class GoicpOptions {
  public:
-  std::string ptCloudP_filename, ptCloudQ_filename, verbosity;
-
   enum ReturnCode { OPTPARSE_SUCCESS, OPTPARSE_FAIL, OPTPARSE_HELP };
+  std::string ptCloudP_filename, ptCloudQ_filename, verbosity;
+  int icp_max_iterations;
 
   ReturnCode parse(int argc, char **argv);
   spdlog::level::level_enum getLogLevel();

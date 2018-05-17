@@ -20,7 +20,8 @@ int main(int argc, char **argv) {
 
   // Setup logger
   auto logger = spdlog::stdout_color_mt("main");
-  spdlog::set_level(options.getLogLevel());  // Set global log level
+  spdlog::set_level(options.getLogLevel());        // Set global log level
+  spdlog::set_pattern("[%T:%e:%f] [%n] [%l] %v");  // [HH:MM:SS:millisec:macrosec]
 
   // Instantiate and load point Clouds
   goicp::PointCloud::Ptr ptCloud_P(new goicp::PointCloud());
@@ -41,6 +42,12 @@ int main(int argc, char **argv) {
                ptCloud_Q->width);
 
   logger->debug("Warning: verbose execution enabled, timing information might be inflated.");
+
+  // Starting Go-ICP
+  logger->info("Starting Go-ICP...");
+  goicp::Goicp go_icp(ptCloud_P, ptCloud_Q, options);
+  go_icp.performRegistration();
+  std::cout << go_icp.getTransform() << std::endl;
 
   return 1;
 }

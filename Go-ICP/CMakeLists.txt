@@ -69,8 +69,10 @@ find_package(spdlog REQUIRED CONFIG)
 #--------------------------------------------------------------------------------
 # Build goicp
 add_executable( goicp 
-  main.cpp
+  distance_transform.cpp
   goicp_options.cpp
+  goicp.cpp
+  main.cpp
 )
 
 # target_include_directories( goicp  PUBLIC
@@ -79,9 +81,9 @@ add_executable( goicp
 
 target_link_libraries( goicp 
   boost::program_options
-  spdlog::spdlog
   eigen3
   pcl
+  spdlog::spdlog
 )
 
 install(TARGETS goicp DESTINATION "bin")
