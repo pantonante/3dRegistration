@@ -4,7 +4,7 @@
 /* -------------------------------------------------------- */
 /* Hard-coded macros (cannot be changed after compilation)  */
 
-#define USE_OMP 	            //enables OpenMP
+//#define USE_OMP 	            //enables OpenMP
 #define MIN_NUM_OF_CORR 6       // minimum number of correspondences required to compute the alignment
 #define FLANN_LEAF_MAX_SIZE 30  // the maximum number of points to have in a leaf for not branching the tree any more
 #define FLANN_SEARCH_CHECK 64   // specifies the maximum leafs to visit when searching for neighbours (-1 for UNLIMITED)

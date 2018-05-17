@@ -51,6 +51,8 @@ public:
 	inline vector<TimingInfo> getTimingInfo(){return timer_.getMeasurements();}
 	inline int getNumCorrespondences(){return corres_.size();}
 
+	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
 private:
 	CPUTimer timer_;
 	vector<Points> pointcloud_;

@@ -3,8 +3,10 @@
 
 # Visual Studio Code
 .vscode/*
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
 vc.code-workspace
+
+# additional temp data
+data/
+FastGlobalRegistration/gdb_test.sh
+FastGlobalRegistration/test.pcd
+FastGlobalRegistration/test.sh

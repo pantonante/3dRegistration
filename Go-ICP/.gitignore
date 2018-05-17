@@ -1,0 +1,11 @@
+.metadata
+
+# MacOS
+.DS_Store
+
+# Build directory
+build*/
+
+# C/C++ Development Tooling
+.cproject
+.vscode/
