@@ -15,6 +15,10 @@ GoicpOptions::ReturnCode GoicpOptions::parse(int argc, char **argv) {
   po::options_description alg("Algorith parameters");
   // clang-format off
   alg.add_options()
+    ("fitness-threashold, f", po::value<float>(&fitness_threshold)->default_value(goicp::defaults::kFitnessThreashold),
+      "Stopping criteria on fitness")
+    ("rot-subcubes", po::value<int>(&rot_subcubes)->default_value(goicp::defaults::kRotSubcubes),
+      "Max number of rotation subcubes")
     ("icp-max-iter", po::value<int>(&icp_max_iterations)->default_value(goicp::defaults::kIcpMaxIterations),
       "Vanilla ICP maximum iterations.\n");
   // clang-format on

@@ -30,7 +30,7 @@ struct Node {
 
 class Goicp {
  public:
-  PointCloud::Ptr cloudP, cloudQ;
+  PointCloud::Ptr cloudP, cloudQ;  //!< normalized point clouds
   Node initNodeRot;
   Node initNodeTrans;
   Node optNodeRot;
@@ -39,13 +39,13 @@ class Goicp {
   GoicpOptions opts;
 
   // distance_transform::DistanceTransform dt;
-  float MSEThresh;
-  float SSEThresh;
-  float icpThresh;
-  float optError;
-  float trimFraction;
-  int inlierNum;
-  bool doTrim;
+  // float MSEThresh;
+  // float SSEThresh;
+  // float icpThresh;
+  // float optError;
+  // float trimFraction;
+  // int inlierNum;
+  // bool doTrim;
 
   Goicp(PointCloud::Ptr cloud_p, PointCloud::Ptr cloud_q, GoicpOptions options);
   float performRegistration();
@@ -60,14 +60,14 @@ class Goicp {
 
  private:
   std::shared_ptr<spdlog::logger> logger_;
-  Eigen::Matrix4f transform_;
-  Eigen::Vector3f cloudP_centroid_, cloudQ_centroid_;
-  float global_scale_;
+  Eigen::Matrix4f transform_;  //!< so-far best transformation matrix for normalized pt. clouds
+  Eigen::Vector3f cloudP_centroid_, cloudQ_centroid_;  //!< point cloud centroids
+  float global_scale_;  //!< scaling factor to normalize pt. clouds into [-1, 1]^3
+  std::vector<std::vector<float> > rot_uncert;  //!< rotation uncertainty for each rotation subcube
 
   float icp(Eigen::Matrix4f &transform);
   float innerBnB(float *maxRotDisL, Node *nodeTransOut);
   float outerBnB();
-  void clear();
 };
 
 }  // namespace goicp

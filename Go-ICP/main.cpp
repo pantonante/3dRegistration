@@ -20,8 +20,9 @@ int main(int argc, char **argv) {
 
   // Setup logger
   auto logger = spdlog::stdout_color_mt("main");
-  spdlog::set_level(options.getLogLevel());        // Set global log level
-  spdlog::set_pattern("[%T:%e:%f] [%n] [%l] %v");  // [HH:MM:SS:millisec:macrosec]
+  spdlog::set_level(options.getLogLevel());  // Set global log level
+  // Set logging patter to "[hh:mm:ss:millisec:macrosec] [logger_name] [loglevel] message"
+  spdlog::set_pattern("[%T:%e:%f] [%n] [%l] %v");
 
   // Instantiate and load point Clouds
   goicp::PointCloud::Ptr ptCloud_P(new goicp::PointCloud());
@@ -47,7 +48,14 @@ int main(int argc, char **argv) {
   logger->info("Starting Go-ICP...");
   goicp::Goicp go_icp(ptCloud_P, ptCloud_Q, options);
   go_icp.performRegistration();
-  std::cout << go_icp.getTransform() << std::endl;
+
+  // show results
+  auto transform = go_icp.getTransform();
+  const Eigen::IOFormat OctaveFmt(Eigen::StreamPrecision, 0, ", ", ";\n", "", "", "[", "]");
+  std::cout << "-------------------------------------------------------------" << std::endl;
+  std::cout << "Transformation matrix: " << std::endl << std::endl;
+  std::cout << transform.format(OctaveFmt) << std::endl;
+  std::cout << "-------------------------------------------------------------" << std::endl;
 
   return 1;
 }

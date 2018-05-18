@@ -4,6 +4,7 @@
 
 #include <cmath>
 #include <limits>
+#include <queue>
 
 #include <pcl/common/transforms.h>
 #include <pcl/registration/icp.h>
@@ -13,6 +14,8 @@
 
 namespace goicp {
 
+constexpr auto kSqrt3 = 1.732050807568877;
+
 Goicp::Goicp(PointCloud::Ptr cloud_p, PointCloud::Ptr cloud_q, GoicpOptions options)
     : cloudP(new PointCloud()), cloudQ(new PointCloud()) {
   opts = options;
@@ -21,7 +24,7 @@ Goicp::Goicp(PointCloud::Ptr cloud_p, PointCloud::Ptr cloud_q, GoicpOptions opti
   initNodeRot.l = 0;
   initNodeRot.lb = 0;
   initNodeTrans.lb = 0;
-  doTrim = true;
+  // doTrim = true;
 
   global_scale_ = 1;
   transform_ = Eigen::Matrix4f::Identity();
@@ -65,13 +68,25 @@ Goicp::Goicp(PointCloud::Ptr cloud_p, PointCloud::Ptr cloud_q, GoicpOptions opti
   const auto scaling = Eigen::Matrix4f::Identity() * (1 / global_scale_);
   pcl::transformPointCloud(*cloudP, *cloudP, scaling);
   pcl::transformPointCloud(*cloudQ, *cloudQ, scaling);
+
+  // Precompute the rotation uncertainty distance (rot_uncert) for each point in the point cloud Q
+  // and each level of rotation subcube
+  for (auto i = 0; i < opts.rot_subcubes; ++i) {
+    // Half-side length of each level of rotation subcube
+    const auto sigma = initNodeRot.w / pow(2.0, i) / 2.0;
+    const auto max_angle = ((kSqrt3 * sigma) > M_PI) ? M_PI : (kSqrt3 * sigma);
+    std::vector<float> max_rot_dis;
+    for (auto pt : cloudQ->points) {
+      max_rot_dis.push_back(2 * sin(max_angle / 2) * pt.getVector3fMap().norm());
+    }
+    rot_uncert.push_back(max_rot_dis);
+  }
 }
 
 float Goicp::performRegistration() {
-  Eigen::Matrix4f local_transform;
-  float fitness = icp(local_transform);
-  if (std::isfinite(fitness)) {
-    transform_ = local_transform;
+  auto fitness = outerBnB();
+  if (std::isinf(fitness)) {
+    logger_->error("Go-ICP has not converged.");
   }
   return fitness;
 }
@@ -95,14 +110,14 @@ float Goicp::icp(Eigen::Matrix4f &transform) {
   icp.setMaximumIterations(opts.icp_max_iterations);
   icp.setInputSource(cloudP);
   icp.setInputTarget(cloudQ);
-  icp.align(*cloudP);
+  icp.align(*cloudP, transform);  // ICP with initial guess
   logger_->trace("ICP done, converged: {}", icp.hasConverged());
 
   if (icp.hasConverged()) {
     fitness = icp.getFitnessScore();
     transform = icp.getFinalTransformation();
   } else {
-    logger_->error("ICP not converged");
+    logger_->error("Local ICP not converged");
   }
 
   return fitness;
@@ -110,6 +125,34 @@ float Goicp::icp(Eigen::Matrix4f &transform) {
 
 float Goicp::innerBnB(float *maxRotDisL, Node *nodeTransOut) { return 0.0; }
 
-float Goicp::outerBnB() { return 0.0; }
+float Goicp::outerBnB() {
+  logger_->trace("Starting GO-ICP outer-BnB");
+  unsigned int iter = 1;
+  std::priority_queue<Node> rot_queue;
+  rot_queue.push(initNodeRot);
+
+  float fitness = icp(transform_);
+  while (!rot_queue.empty()) {
+    logger_->info("E* = {} (iter. {})", fitness, iter);
+    if (fitness < opts.fitness_threshold) {
+      logger_->debug("Stopping criteria: registration error below threshold");
+      break;
+    }
+
+    // Access rotation cube with lowest lower bound...
+    Node rot_node = rot_queue.top();
+    // ...and remove it from the queue
+    rot_queue.pop();
+
+    // do something useful...
+    ++iter;
+  }
+
+  if (rot_queue.empty()) {
+    logger_->debug("Stopping criteria: subcube exploration completed");
+  }
+
+  return fitness;
+}
 
 }  // namespace goicp
