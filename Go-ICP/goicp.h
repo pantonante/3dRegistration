@@ -17,9 +17,12 @@ typedef pcl::PointXYZ Point;
 typedef pcl::PointCloud<Point> PointCloud;
 
 struct Node {
-  float a, b, c, w;
+  union {
+    float a, b, c;  // Rotation node
+    float x, y, z;  // Translation node
+  };
+  float w, l;
   float ub, lb;
-  int l;
   friend bool operator<(const Node &n1, const Node &n2) {
     if (n1.lb != n2.lb)
       return n1.lb > n2.lb;
@@ -31,20 +34,16 @@ struct Node {
 class Goicp {
  public:
   PointCloud::Ptr cloudP, cloudQ;  //!< normalized point clouds
-  Node initNodeRot;
-  Node initNodeTrans;
-  Node optNodeRot;
-  Node optNodeTrans;
 
   GoicpOptions opts;
-
+  float fitness;
   // distance_transform::DistanceTransform dt;
   // float MSEThresh;
   // float SSEThresh;
   // float icpThresh;
   // float optError;
   // float trimFraction;
-  // int inlierNum;
+  int inliers_num;
   // bool doTrim;
 
   Goicp(PointCloud::Ptr cloud_p, PointCloud::Ptr cloud_q, GoicpOptions options);
@@ -65,9 +64,14 @@ class Goicp {
   float global_scale_;  //!< scaling factor to normalize pt. clouds into [-1, 1]^3
   std::vector<std::vector<float> > rot_uncert;  //!< rotation uncertainty for each rotation subcube
 
-  float icp(Eigen::Matrix4f &transform);
-  float innerBnB(float *maxRotDisL, Node *nodeTransOut);
+  Node opt_rot_node_;
+  Node opt_trans_node_;
+
+  float innerBnB(const Eigen::Matrix3f &base_rot, std::vector<float> *gamma_rot, Node *out_node);
   float outerBnB();
+  float icp(Eigen::Matrix4f &transform);
+  void transCubeBounds(Eigen::Matrix4f &transform, std::vector<float> *maxRotDisL,
+                       Node &trans_node);
 };
 
 }  // namespace goicp

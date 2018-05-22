@@ -21,6 +21,7 @@ class GoicpOptions {
   int icp_max_iterations;
   int rot_subcubes;
   float fitness_threshold;
+  bool no_bnb;
 
   // Methods
   ReturnCode parse(int argc, char **argv);

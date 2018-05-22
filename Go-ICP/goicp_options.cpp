@@ -15,12 +15,14 @@ GoicpOptions::ReturnCode GoicpOptions::parse(int argc, char **argv) {
   po::options_description alg("Algorith parameters");
   // clang-format off
   alg.add_options()
-    ("fitness-threashold, f", po::value<float>(&fitness_threshold)->default_value(goicp::defaults::kFitnessThreashold),
-      "Stopping criteria on fitness")
+    ("fitness-threashold,f", po::value<float>(&fitness_threshold)->default_value(goicp::defaults::kFitnessThreashold),
+      "Mean Squared Error (MSE) convergence threshold")
     ("rot-subcubes", po::value<int>(&rot_subcubes)->default_value(goicp::defaults::kRotSubcubes),
       "Max number of rotation subcubes")
     ("icp-max-iter", po::value<int>(&icp_max_iterations)->default_value(goicp::defaults::kIcpMaxIterations),
-      "Vanilla ICP maximum iterations.\n");
+      "Vanilla ICP maximum iterations.\n")
+    ("no-BnB", po::bool_switch(&no_bnb)->default_value(false), 
+        "Disable Branch-and-Bound (basically executes vanilla ICP).\n");
   // clang-format on
 
   po::options_description misc("Miscellaneous");
