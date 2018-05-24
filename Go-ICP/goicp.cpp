@@ -1,5 +1,3 @@
-#define _USE_MATH_DEFINES
-
 #include "goicp.h"
 
 #include <cmath>
@@ -10,8 +8,6 @@
 #include <pcl/common/transforms.h>
 #include <pcl/registration/correspondence_estimation.h>
 #include <pcl/registration/icp.h>
-#include <pcl/registration/icp_nl.h>
-#include <pcl/registration/incremental_registration.h>
 
 #include <Eigen/Geometry>
 
@@ -20,7 +16,8 @@ namespace goicp {
 constexpr auto kSqrt3 = 1.732050807568877;
 
 constexpr float rmse2sse(float rmse, int num_points) {
-  return std::pow(rmse, 2) * static_cast<float>(num_points);
+  // return std::pow(rmse, 2) * static_cast<float>(num_points);
+  return rmse;
 }
 
 template <class T>
@@ -41,28 +38,22 @@ Goicp::Goicp(PointCloud::Ptr cloud_p, PointCloud::Ptr cloud_q, GoicpOptions opti
   transform_ = Eigen::Matrix4f::Identity();
   logger_ = spdlog::stdout_color_mt("Go-ICP");
 
-  // Build Distance Transform
-  // logger_->trace("Building Distance Transform");
-  // double *x = new double[cloudP->size()];
-  // double *y = new double[cloudP->size()];
-  // double *z = new double[cloudP->size()];
-  // for (int i = 0; i < cloudP->size(); i++) {
-  //   // TODO(pantonante): waste of memory, distance transform should accept point clouds
-  //   x[i] = static_cast<double>(cloudP->points[i].x);
-  //   y[i] = static_cast<double>(cloudP->points[i].y);
-  //   z[i] = static_cast<double>(cloudP->points[i].z);
-  // }
-  // dt.build(x, y, z, cloudP->size());
-  // delete[] x;
-  // delete[] y;
-  // delete[] z;
-
   // Node init
-  opt_rot_node_.a = opt_rot_node_.b = opt_rot_node_.c = -M_PI;
-  opt_rot_node_.w = 2 * M_PI;
-  opt_rot_node_.l = 0;
-  opt_rot_node_.lb = 0;
-  opt_trans_node_.lb = 0;
+  init_rot_node_.a = -M_PI;     // rot min X
+  init_rot_node_.b = -M_PI;     // rot min Y
+  init_rot_node_.c = -M_PI;     // rot min Z
+  init_rot_node_.w = 2 * M_PI;  // rot width
+  init_rot_node_.l = 0;
+  init_rot_node_.lb = 0;
+  init_trans_node_.x = -0.5f;  // trans min X
+  init_trans_node_.y = -0.5f;  // trans min Y
+  init_trans_node_.z = -0.5f;  // trans min Z
+  init_trans_node_.w = 1;      // trans width
+  init_trans_node_.lb = 0;
+
+  // So far best rotation and translation nodes
+  opt_rot_node_ = init_rot_node_;
+  opt_trans_node_ = init_trans_node_;
 
   // Demean point cloud
   logger_->trace("Demeaning point clouds");
@@ -90,7 +81,7 @@ Goicp::Goicp(PointCloud::Ptr cloud_p, PointCloud::Ptr cloud_q, GoicpOptions opti
   // and each level of rotation subcube
   for (auto i = 0; i < opts.rot_subcubes; ++i) {
     // Half-side length of each level of rotation subcube
-    const auto sigma = opt_rot_node_.w / pow(2.0, i) / 2.0;
+    const auto sigma = init_rot_node_.w / pow(2.0, i) / 2.0;
     const auto max_angle = minBetween(kSqrt3 * sigma, M_PI);
     std::vector<float> max_rot_dis;
     for (auto pt : cloudQ->points) {
@@ -140,13 +131,14 @@ float Goicp::icp(Eigen::Matrix4f &transform) {
   logger_->trace("ICP done, converged: {}", icp.hasConverged());
 
   if (icp.hasConverged()) {
-    fitness = icp.getFitnessScore();
     transform = icp.getFinalTransformation();
+    fitness = icp.getFitnessScore();  // sse
   } else {
     logger_->error("Local ICP not converged");
   }
 
-  return rmse2sse(fitness, inliers_num);
+  // fitness is a sum of squared distances from the source to the target
+  return fitness;
 }
 
 float Goicp::outerBnB() {
@@ -157,7 +149,7 @@ float Goicp::outerBnB() {
 
   // Initial guess
   fitness = icp(transform_);
-  rot_queue.push(opt_rot_node_);  // init. rotation node
+  rot_queue.push(init_rot_node_);  // init. rotation node
 
   while (!rot_queue.empty()) {
     logger_->info("E* = {} (iter. {})", fitness, iter);
@@ -186,7 +178,7 @@ float Goicp::outerBnB() {
 
     // For each subcube
     for (auto i = 0; i < 8; i++) {
-      logger_->trace("Exploring subcube {}", i);
+      logger_->trace("Exploring rotation subcube {}", i);
       rot_node.a = rot_node_parent.a + (i & 1) * rot_node.w;
       rot_node.b = rot_node_parent.b + (i >> 1 & 1) * rot_node.w;
       rot_node.c = rot_node_parent.c + (i >> 2 & 1) * rot_node.w;
@@ -239,9 +231,9 @@ float Goicp::outerBnB() {
         // Run vanilla ICP to find local minima in the subcube
         auto local_fitness = icp(local_transform);
         if (local_fitness < fitness) {
-          logger_->trace("Better transformation matrix found");
           fitness = local_fitness;
           transform_ = local_transform;
+          logger_->trace("Better transformation matrix found, E*: ", fitness);
         }
 
         // Discard all rotation nodes with high lower bounds in the queue
@@ -257,28 +249,25 @@ float Goicp::outerBnB() {
             break;
         }
         rot_queue = temp_queue;
+      }
+      // Lower Bound
+      // Run Inner Branch-and-Bound to find rotation lower bound
+      // Calculates the rotation lower bound by finding the translation upper bound for a given
+      // rotation, assuming that the rotation is uncertain (a positive rotation uncertainty
+      // radius) Pass an array of rotation uncertainties for every point in data cloud at this
+      // level
+      auto lb = innerBnB(rotm, &rot_uncert[rot_node.l], nullptr /*Translation Node*/);
 
-        // Lower Bound
-        // Run Inner Branch-and-Bound to find rotation lower bound
-        // Calculates the rotation lower bound by finding the translation upper bound for a given
-        // rotation, assuming that the rotation is uncertain (a positive rotation uncertainty
-        // radius) Pass an array of rotation uncertainties for every point in data cloud at this
-        // level
-        auto lb = innerBnB(rotm, &rot_uncert[rot_node.l], nullptr /*Translation Node*/);
-
-        // If the best error so far is less than the lower bound, remove the rotation subcube from
-        // the queue
-        if (lb >= fitness) {
-          continue;
-        }
-
+      // If the best-error-so-far is less than the lower bound, remove the rotation subcube from
+      // the queue
+      if (lb < fitness) {
         // Update node and put it in queue
         logger_->trace("Cube {} added to the queue, UB: {}, LB: {}", i, ub, lb);
         rot_node.ub = ub;
         rot_node.lb = lb;
         rot_queue.push(rot_node);
       }
-    }
+    }  // end for-each subcube
 
     ++iter;  // let's got to a new iteration
   }
@@ -298,13 +287,16 @@ float Goicp::innerBnB(const Eigen::Matrix3f &base_rot, std::vector<float> *gamma
   float so_far_fitness = fitness;
 
   // Push top-level translation node into the priority queue
-  Node init_node;
-  init_node.lb = 0;
-  trans_queue.push(init_node);
+  trans_queue.push(init_trans_node_);
 
   while (!trans_queue.empty()) {
+    // logger_->debug("Translation nodes queue size {}", trans_queue.size());
+
     Node trans_node_parent = trans_queue.top();
     trans_queue.pop();
+
+    // logger_->trace("Exploring translation cube in inner BnB, LB: {}, {}", trans_node_parent.lb,
+    //                (gamma_rot == nullptr) ? "no gamma rot." : "with gamma rot.");
 
     if ((so_far_fitness - trans_node_parent.lb) < rmse2sse(opts.fitness_threshold, inliers_num)) {
       break;
@@ -313,73 +305,89 @@ float Goicp::innerBnB(const Eigen::Matrix3f &base_rot, std::vector<float> *gamma
     // Subdivide translation cube into octant subcubes and calculate upper and lower bounds for each
     Node trans_node;
     trans_node.w = trans_node_parent.w / 2;
-    trans_node.l = kSqrt3 / 2.0 * trans_node_parent.l;
+    float gamma_trans = kSqrt3 / 2.0 * trans_node_parent.w;
     // For each subcube
     for (auto i = 0; i < 8; ++i) {
-      trans_node.a = trans_node_parent.a + (i & 1) * trans_node.w;
-      trans_node.b = trans_node_parent.b + (i >> 1 & 1) * trans_node.w;
-      trans_node.c = trans_node_parent.c + (i >> 2 & 1) * trans_node.w;
+      trans_node.x = trans_node_parent.x + (i & 1) * trans_node.w;
+      trans_node.y = trans_node_parent.y + (i >> 1 & 1) * trans_node.w;
+      trans_node.z = trans_node_parent.z + (i >> 2 & 1) * trans_node.w;
 
       Eigen::Vector3f translation(trans_node.x + trans_node.w / 2, trans_node.y + trans_node.w / 2,
                                   trans_node.z + trans_node.w / 2);
 
-      // TODO(pantonante) pass the right transformation matrix
       Eigen::Matrix4f local_transform = Eigen::Matrix4f::Identity();
       local_transform.block<3, 3>(0, 0) = base_rot;
       local_transform.block<3, 1>(0, 3) = translation;
-      transCubeBounds(local_transform, gamma_rot, trans_node);
+      transCubeBounds(local_transform, gamma_rot, gamma_trans, trans_node);
+      // logger_->debug("Translation node, LB: {}, UB: {}, E* = {}", trans_node.lb, trans_node.ub,
+      // fitness);
 
       // If upper bound is better than best so far, update it and the optimal translation
       // node
       if (trans_node.ub < so_far_fitness) {
-        logger_->trace("Better translation subcube found");
         so_far_fitness = trans_node.ub;
         if (out_node) *out_node = trans_node;
+        logger_->trace("Better translation subcube found, E*: {}", so_far_fitness);
       }
 
-      // Remove subcube from queue if lower bound is bigger than bcorr so far
-      if (trans_node.lb >= so_far_fitness) {
-        continue;
+      // Add the subcube from queue if lower bound is smaller than best so far
+      if (trans_node.lb < so_far_fitness) {
+        trans_queue.push(trans_node);
       }
-
-      trans_queue.push(trans_node);
     }
   }
   return so_far_fitness;
 }
 
+// float Goicp::alignmentError(Eigen::Matrix4f &transform) {  // SSE
+//   PointCloud::Ptr local_cloud(new PointCloud());
+//   pcl::transformPointCloud(*cloudP, *local_cloud, transform);
+
+//   // Find correspondences
+//   pcl::Correspondences correspondences;
+//   pcl::registration::CorrespondenceEstimation<Point, Point> est;
+//   est.setInputSource(local_cloud);
+//   est.setInputTarget(cloudQ);
+//   est.determineReciprocalCorrespondences(correspondences);
+
+//   // Compute Sum of Squared Errors (SSE)
+//   float sse = 0;
+//   for (auto corr : correspondences) {
+//     const auto i = corr.index_query;
+//     const auto j = corr.index_match;
+//     sse += pcl::geometry::squaredDistance(local_cloud->points[i], cloudQ->points[j]);
+//   }
+//   return sse;
+// }
+
 void Goicp::transCubeBounds(Eigen::Matrix4f &transform, std::vector<float> *gamma_rot,
-                            Node &trans_node) {
+                            float gamma_trans, Node &trans_node) {
   PointCloud::Ptr local_cloud(new PointCloud());
   float upper_bound = 0;
   float lower_bound = 0;
   float best_error = fitness;
-  const float gamma_trans = kSqrt3 / 2.0 * trans_node.w;
+  // const float gamma_trans = kSqrt3 / 2.0 * trans_node.w;
 
   pcl::transformPointCloud(*cloudP, *local_cloud, transform);
 
-  // Find correspondences
-  pcl::Correspondences correspondences;
-  pcl::registration::CorrespondenceEstimation<Point, Point> est;
-  est.setInputSource(local_cloud);
-  est.setInputTarget(cloudQ);
-  est.determineReciprocalCorrespondences(correspondences);
+  // // Find correspondences
+  // pcl::Correspondences correspondences;
+  // pcl::registration::CorrespondenceEstimation<Point, Point> est;
+  // est.setInputSource(local_cloud);
+  // est.setInputTarget(cloudQ);
+  // est.determineCorrespondences(correspondences);
 
-  // Compute upper bound
-  for (auto corr : correspondences) {
-    const auto i = corr.index_query;
-    const auto j = corr.index_match;
+  // // Compute upper bound
+  // for (auto corr : correspondences) {
+  //   const auto j = corr.index_query;
+  //   const auto i = corr.index_match;
+  for (int i = 0; i < cloudP->size(); ++i) {
+    const auto j = i;
+    // dist = || x_i - x_j ||
     const auto dist = pcl::geometry::distance(local_cloud->points[i], cloudQ->points[j]);
-    if (gamma_rot != nullptr) {
-      upper_bound += std::pow(maxBetween(dist - gamma_rot->at(i), .0f), 2);
-    } else {
-      upper_bound += std::pow(maxBetween(dist, .0f), 2);
-    }
-    if (gamma_rot != nullptr) {
-      lower_bound += std::pow(maxBetween(dist - gamma_rot->at(i) - gamma_trans, .0f), 2);
-    } else {
-      lower_bound += std::pow(maxBetween(dist - gamma_trans, .0f), 2);
-    }
+    const auto gamma_rot_i = (gamma_rot != nullptr) ? gamma_rot->at(i) : 0;
+    upper_bound += std::pow(maxBetween(dist - gamma_rot_i, .0f), 2);
+    lower_bound += std::pow(maxBetween(dist - gamma_rot_i - gamma_trans, .0f), 2);
   }
 
   trans_node.ub = upper_bound;

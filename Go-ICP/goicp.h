@@ -64,14 +64,15 @@ class Goicp {
   float global_scale_;  //!< scaling factor to normalize pt. clouds into [-1, 1]^3
   std::vector<std::vector<float> > rot_uncert;  //!< rotation uncertainty for each rotation subcube
 
-  Node opt_rot_node_;
-  Node opt_trans_node_;
+  Node opt_rot_node_, init_rot_node_;
+  Node opt_trans_node_, init_trans_node_;
 
   float innerBnB(const Eigen::Matrix3f &base_rot, std::vector<float> *gamma_rot, Node *out_node);
   float outerBnB();
   float icp(Eigen::Matrix4f &transform);
-  void transCubeBounds(Eigen::Matrix4f &transform, std::vector<float> *maxRotDisL,
+  void transCubeBounds(Eigen::Matrix4f &transform, std::vector<float> *gamma_rot, float gamma_trans,
                        Node &trans_node);
+  // float alignmentError(Eigen::Matrix4f &transform);
 };
 
 }  // namespace goicp
